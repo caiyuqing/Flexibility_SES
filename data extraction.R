@@ -32,11 +32,12 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 library("psych")
 library("dplyr")
 library("tidyverse")
+
 #read data
 dfc0 <- read.csv("data/2010child.csv", header=T) %>% dplyr:: rename_at(1, ~"pid")
 dfa0 <- read.csv("data/2010adult.csv", header=T) %>% dplyr:: rename_at(1, ~"pid")
 dff0 <- read.csv("data/2010family.csv", header=T) %>% dplyr:: rename_at(1, ~"fid")
-dffr0 <- read.csv("data/2010familyroster.csv", header = T) %>% dplyr:: rename_at(1, ~"pid")
+# dffr0 <- read.csv("data/2010familyroster.csv", header = T) %>% dplyr:: rename_at(1, ~"pid") hcp: we didn't use this dataset? and I don't have this data set
 
 #extract related data according to SES 2010 codebook
 ##adult questionnaire-individual
