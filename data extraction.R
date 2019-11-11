@@ -230,6 +230,7 @@ df.children <- dfc0 %>%
 df.family_community <- merge(df.family, df.community, by = "cid", all.x = TRUE)
 CFPS2010_ses_adults <- merge(df.individual, df.family_community, by = "fid", all.x= TRUE)
 save(CFPS2010_ses_adults, file = 'CFPS2010_adult.RData')
+write.csv(CFPS2010_ses_adults, file = "CFPS2010_ses_adults.csv", row.names = FALSE)
 #CYQ: How should we combine children and adult data?
 
 
