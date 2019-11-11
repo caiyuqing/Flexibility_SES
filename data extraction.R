@@ -7,7 +7,7 @@
 # 
 #
 ###### input######
-#data 2010
+# CFPS data 2010
 ###### output #####
 #
 #
@@ -32,16 +32,16 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 library("psych")
 library("dplyr")
 library("tidyverse")
+
 #read data
 dfc0 <- read.csv("data/2010child.csv", header=T)
 dfa0 <- read.csv("data/2010adult.csv", header=T)
 dff0 <- read.csv("data/2010family.csv", header=T)
 dfcom0 <- read.csv("data/2010community.csv", header= T)
-dffr0 <- read.csv("data/2010familyroster.csv", header = T)
 
 #extract related data according to SES 2010 codebook
 ##community 
-community <- dfcom0 %>%
+df.community <- dfcom0 %>%
   dplyr::select(###ID	
                 cid, #community id
                 #area size and population	
@@ -83,7 +83,7 @@ community <- dfcom0 %>%
                 cz703)	#Interviewer Observation: Detailed village type)
 
 ##adult questionnaire-individual
-individual <- dfa0 %>%
+df.individual <- dfa0 %>%
   dplyr::select(pid, fid,
                 #education
                 edu2010_t1_best,	#Best var of highest level of education attained at 2010
@@ -116,9 +116,8 @@ individual <- dfa0 %>%
                 qm402,	#Social status in local area
                 qq601, qq602,qq603,qq604,qq605,qq606,#depression
                 wordtest, mathtest) #cognitive ability
-summary(individual$mathtest)
 ###family 
-family <- dff0 %>%
+df.family <- dff0 %>%
   dplyr::select(#id
                 fid, cid,
                 #family income
@@ -200,7 +199,7 @@ family <- dff0 %>%
                 fd8_s_2,	#Difficulty with housing: Problem 2
                 fd8_s_3)	#Difficulty with housing: Problem 3
 ##children
-children <- dfc0 %>%
+df.children <- dfc0 %>%
   dplyr::select(###id	
                 pid,	#personal id
                 fid,	#family id
@@ -226,3 +225,17 @@ children <- dfc0 %>%
                 tb6_a_f,	#Father living in the household (living with family)
                 tb6_a_m,	#Mother living in the household (living with family)
                 wz301)	#Interviewer Observation: Home environment indicates parents care about child's education)
+
+# combine as one dataframe
+df.family_community <- merge(df.family, df.community, by = "cid", all.x = TRUE)
+CFPS2010_ses_adults <- merge(df.individual, df.family_community, by = "fid", all.x= TRUE)
+save(CFPS2010_ses_adults, file = 'CFPS2010_adult.RData')
+#CYQ: How should we combine children and adult data?
+
+
+# Test the save data
+df.test <- CFPS2010_ses_adults
+rm(CFPS2010_ses_adults)
+load("CFPS2010_adult.RData")
+all.equal(CFPS2010_ses_adults, df.test)
+

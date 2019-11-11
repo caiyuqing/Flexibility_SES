@@ -1,3 +1,4 @@
-# What-is-SES-project
-CYQ: download the original data (.csv) from
-链接:https://pan.baidu.com/s/1drWN2ECPBQZCIDQLmpO0RQ  密码:r9o3
+# Measurment Flexibility of SES in cognitive neuroscience
+
+We use CFPS 2010 data to examine how the flexibility will impact the results.
+Original data of CFPS 2010 data can be downloaded from: https://opendata.pku.edu.cn/dataverse/CFPS?language=en
