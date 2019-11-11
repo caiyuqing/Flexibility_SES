@@ -33,7 +33,7 @@ Now, we're preparing our data for the codebook.
 install.packages("codebook")
 library(codebook)
 library(rlang)
-codebook_data <- read.csv("data2010.csv", header = T)
+codebook_data <- read.csv("CFPS2010_ses_adults.csv", header = T)
 ```
 
 
