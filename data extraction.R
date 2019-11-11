@@ -36,11 +36,53 @@ library("tidyverse")
 dfc0 <- read.csv("data/2010child.csv", header=T)
 dfa0 <- read.csv("data/2010adult.csv", header=T)
 dff0 <- read.csv("data/2010family.csv", header=T)
+dfcom0 <- read.csv("data/2010community.csv", header= T)
 dffr0 <- read.csv("data/2010familyroster.csv", header = T)
 
 #extract related data according to SES 2010 codebook
-##adult questionnaire-individual
+##community 
+community <- dfcom0 %>%
+  dplyr::select(###ID	
+                cid, #community id
+                #area size and population	
+                ca4r,	#Area size of the community(km2)
+                cb1,	#households last year
+                cb2,	#persons last year
+                cb201,	#persons with local household registration last year
+                cb202,	#regular residents last year
+                cb203,	#floating population last year
+                ###basic living allowance
+                cc2,	#households eligible for the MLSS system
+                cc3,	#households supported by the MLSS system
+                cc4,	#Per capita monthly support (yuan) on average from the MLSS system
+                ###surrounding environment	
+                ce2,	#Tourist destination
+                ce3,	#Polluting factory within 5 km
+                cg5,	#Dose your village experience frequent natural disasters?
+                ###housing price	
+                cf1,	#Highest price of commercial housing in history
+                cf2,	#Highest price of commercial housing last month
+                cf3,	#Average price of commercial housing last month
+                ###natural resources	
+                cg4,	#Does the village have mineral resource?
+                cg601_a_1,	#Per capita arable land (mu/person)
+                cg601_a_2,	#Per capita mountainous land (mu/person)
+                cg601_a_3,	#Per capita forest (mu/person)
+                cg601_a_4,	#Per capita water surface (mu/person)
+                cg601_a_5,	#Per capita pasture (mu/person)
+                ###Environment observation	
+                cz1,	#Interviewer Observation: Economic condition
+                cz2,	#Interviewer Observation: Cleanlines of the roads
+                cz3,	#Interviewer Observation: Outlook of local people
+                cz4,	#Interviewer Observation: Socioeconomic homogeneity
+                cz5,	#Interviewer Observation: Architectural layout
+                cz6,	#Interviewer Observation: Spaciousness of the buildings
+                cz7,	#Interviewer Observation: Community type
+                cz701,	#Interviewer Observation: Detailed city type
+                cz702,	#Interviewer Observation: Detailed town type
+                cz703)	#Interviewer Observation: Detailed village type)
 
+##adult questionnaire-individual
 individual <- dfa0 %>%
   dplyr::select(pid, fid,
                 #education
@@ -74,10 +116,11 @@ individual <- dfa0 %>%
                 qm402,	#Social status in local area
                 qq601, qq602,qq603,qq604,qq605,qq606,#depression
                 wordtest, mathtest) #cognitive ability
-
+summary(individual$mathtest)
 ###family 
 family <- dff0 %>%
-  dplyr::select(fid,
+  dplyr::select(#id
+                fid, cid,
                 #family income
                 fsalary,	#Salary income
                 fshift,	#transfer income
@@ -143,6 +186,43 @@ family <- dff0 %>%
                 fh6_max,	#Upper limit of total expenditures last year
                 fh6_min,	#Lower limit of total expenditures last year
                 fh601, #Total expenditures last year(yuan))
-                familysize) #familysize
-#combine as one dataframe
-data2010 <- merge(individual, family, by = "fid", all.x= TRUE)
+                ###family size
+                familysize, #family size
+                ###household environment
+                fd1, #House ownership
+                fd102,	#Built the house or bought it
+                fd103,	#When was the house built
+                fd2,	#Building area of the house
+                fd4,	#The current value of your house last month (10,000 yuan)
+                fd5,	#How much rent could you get had you rented the house last month (yuan)
+                fd6,	#Housing type
+                fd8_s_1,	#Difficulty with housing: Problem 1
+                fd8_s_2,	#Difficulty with housing: Problem 2
+                fd8_s_3)	#Difficulty with housing: Problem 3
+##children
+children <- dfc0 %>%
+  dplyr::select(###id	
+                pid,	#personal id
+                fid,	#family id
+                cid,	#community id
+                pid_f,	#father id
+                pid_m,	#mother id
+                ###mental health	
+                wn401,	#Feel depressed and cannot cheer up
+                wn402,	#Feel nervous
+                wn403,	#Feel agitated or upset and cannot remain calm 
+                wn404,	#Feel hopeless about the future 
+                wn405,	#Feel that everything is difficult 
+                wn406,	#Think life is meaningless 
+                ###cognitive ability	
+                wordtest,	
+                mathtest,	
+                ###migrated,	
+                wa5, #Child's place of house registration same as birthplace
+                ###children living condition	
+                wb1,	#Child's place to live in the latest non-vacation month
+                wb2,	#Child's major caregiver in the latest non-vacation month
+                wb201,	#Child's frequency meeting parent(s) in the latest non-vacation month
+                tb6_a_f,	#Father living in the household (living with family)
+                tb6_a_m,	#Mother living in the household (living with family)
+                wz301)	#Interviewer Observation: Home environment indicates parents care about child's education)
