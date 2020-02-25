@@ -1,5 +1,6 @@
 # Visualize the data in sankey
 # Load package
+install.packages("networkD3")
 library(networkD3)
 library(dplyr)
 
