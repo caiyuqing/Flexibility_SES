@@ -29,13 +29,15 @@ setwd(curWD)
 library(foreign)
 library(tidyverse)
 d <- read.spss("selected for proposal_v1.sav", to.data.frame = TRUE, use.value.labels = TRUE)
-#see variable name
+#see variable name 
 d_var <- attr(d, "variable.labels")
 #age
 d$ER34504[d$ER34504 == 999] <-NA
+##divide by gender
 d_male <-d %>%
   filter(ER32000 == 1)
 d_female <-d %>%
   filter(ER32000 == 2)
-table(cut(d_male$ER34504, breaks = c(0, 10, 16, 25, 40, 60, 103)))
-table(cut(d_female$ER34504, breaks = c(0, 10, 16, 25, 40, 60, 103)))
+#age division
+table(cut(d_male$ER34504, breaks = c(0, 10, 16, 25, 40, 60, 103))) #male
+table(cut(d_female$ER34504, breaks = c(0, 10, 16, 25, 40, 60, 103))) #female
