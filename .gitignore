@@ -1,6 +1,5 @@
 data/
 *.csv
-*.xlsx
 *.Rproj.user
 *.Rhistory
 *.RData
