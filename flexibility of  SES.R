@@ -76,17 +76,31 @@ library(foreign)
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 df.psid_proposal$pid <- 1:26445
-#identify mother in the data
+#identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
-psid_mother <- df.psid_proposal %>%
-  dplyr::select(ER66021,ER34503,ER34501,ER30002,ER32000) %>% #children in FU; relation to RP; fid; pid; sex
-  dplyr::filter(ER66021 != 0)  %>% #the family have children
-  dplyr::filter(ER34503 == 10 & 20) %>% #reference person & spouse & paterner
+psid_child <- df.psid_proposal %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
+  dplyr::filter(ER34503 ==30) #extract children of rp
+psid_father <- df.psid_proposal %>% #extract rp and sp
+  dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
+  dplyr::filter(ER34503 == 10 & 20) %>%
+  dplyr::filter(ER32000 == 1) #male
+psid_mother <- df.psid_proposal %>% #extract rp and sp
+  dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
+  dplyr::filter(ER34503 == 10 & 20) %>%
   dplyr::filter(ER32000 == 2) #female
+names(psid_child) <- c("relation_rp", "fid", "pid", "sex")
+names(psid_father) <- c("relation_rp", "fid", "pid", "sex")
+names(psid_mother) <- c("relation_rp", "fid", "pid", "sex")
+#another possible way to identify mother (?)
+#psid_mother <- df.psid_proposal %>%
+#  dplyr::select(ER66021,ER34503,ER34501,ER30002,ER32000) %>% #children in FU; relation to RP; fid; pid; sex
+#  dplyr::filter(ER66021 != 0)  %>% #the family have children
+#  dplyr::filter(ER34503 == 10 & 20) %>% #reference person & spouse & paterner
+#  dplyr::filter(ER32000 == 2) #female
 var_labs <- attr(df.psid, "variable.labels")
 var_labs <- var_labs[names(psid_mother)]
 attr(psid_mother, "variable.labels") <- var_labs
-names(psid_mother) <-  c("number_child", "relation_rp", "fid", "pid", "sex")
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
 betan_psid_edu <- df.psid %>%
   dplyr::select(ER34548,ER34501,ER30002) %>% #education, fid, pid
@@ -229,17 +243,128 @@ yu_cfps  <- merge(yu_cfps, yu_cfps_fedu, by = "pid_f")
 yu_cfps <- merge(yu_cfps, yu_cfps_medu, by = "pid_m")
 yu_cfps <- merge(yu_cfps, yu_cfps_sss, by = "pid")
 #PCA
-install.packages("FactoMineR")
-install.packages("factoextra")
+#install.packages("FactoMineR")
+#install.packages("factoextra")
 library(FactoMineR)
 library(factoextra)
-yu_pca <- yu_cfps %>%
+yu_pca_cfps <- yu_cfps %>%
   dplyr::select(ITN, edu_f_recode, edu_m_recode, sss)
-yu_pca <- drop_na(yu_pca)
-yu.pr<-PCA(yu_pca, scale.unit = TRUE, graph = TRUE)
-get_eigenvalue(yu.pr)
-fviz_eig(yu.pr)#scree plot
-var <- get_pca_var(yu.pr) #sss shows opposite contribution (?)
+yu_pca_cfps <- drop_na(yu_pca_cfps)
+yu.pr_cfps<-PCA(yu_pca_cfps, scale.unit = TRUE, graph = TRUE)
+get_eigenvalue(yu.pr_cfps)
+fviz_eig(yu.pr_cfps)#scree plot
+var <- get_pca_var(yu.pr_cfps) #sss shows opposite contribution (?)
+var$coord
 #calculate SES as first component (?PCA does not appear to be single component)
 yu_cfps <- yu_cfps %>%
-  dplyr::mutate(SES_yu_cfps = 0.71118313*ITN + 0.78339583*edu_f_recode + 0.81539907*edu_f_recode + (-0.04682041)*sss)
+  dplyr::mutate(SES_yu_cfps = 0.71118313*ITN + 0.78339583*edu_f_recode + 0.81539907*edu_m_recode + (-0.04682041)*sss)
+#psid:only rp and sp have sss and parental education info
+#extract sp and rp 
+#do yu,2018 second young adult version first
+#import more data (education related)
+df.psid_supp_edu <- read.spss("supplement_data_education.sav", to.data.frame = TRUE, use.value.labels = TRUE)
+yu_yadult_psid_rp <- df.psid_proposal %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
+  dplyr::filter(ER34503 == 10) %>%
+  dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
+yu_yadult_psid_sp <- df.psid_proposal %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
+  dplyr::filter(ER34503 == 20) %>%
+  dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
+names(yu_yadult_psid_rp)  <- c("relation_rp", "fid", "pid", "sex", "age")
+names(yu_yadult_psid_sp)  <- c("relation_rp", "fid", "pid", "sex", "age")
+#recode income
+yu_psid_income <- df.psid_proposal %>%
+  dplyr::select(ER34501,ER30002, ER71426)  %>% #fid, pid, total family income
+  dplyr::mutate(income_cat = cut(ER71426, 
+                                 breaks = quantile(df.psid_proposal$ER71426, probs = seq(0, 1, 1/9), na.rm= TRUE),
+                                 labels = c("1", "2", "3", "4", "5", "6", "7", "8", "9")))%>% #recode family income into 9 groups
+  dplyr::mutate(income_cat = as.numeric(income_cat)) #convert into numeric variable
+names(yu_psid_income) <- c("fid", "pid", "fincome", "income_cat")
+yu_psid_income <- merge(yu_psid_income, familysize, by = "fid")
+group_median <- yu_psid_income %>% 
+  dplyr::group_by(income_cat) %>% #group income into 9 groups
+  dplyr::summarise(group_median = median(fincome))
+yu_psid_income <- merge(yu_psid_income, group_median, by= "income_cat") #merge income median with main data frame
+yu_psid_income <- yu_psid_income %>%
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%  #calculate poverty line according to family size
+  dplyr::mutate(ITN = group_median/poverty) #calculate ITN: group_median divide poverty line
+table(yu_psid_income$ITN) #check ITN
+#parents' education
+yu_psid_edu <- df.psid_supp_edu %>%
+  dplyr::select(ER34501,ER30002,TA171981,TA171983) %>% #fid, pid, mother_edu, father_edu
+  dplyr::mutate(edu_m_recode = cut(TA171981, breaks = c(-0.001, 0.5, 10.5, 12.5, 14.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6")),
+                edu_f_recode = cut(TA171983, breaks = c(-0.001, 0.5, 10.5, 12.5, 14.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6"))) %>% #cut education into 6 groups: Noe of below (1):0; < high school (2):1-10; High scool (3):11-12; associate degree (4):13-14; bachelor's degree (5):14-16; Master's degree (6)&PhD/MD (7):17
+  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode),
+                edu_f_recode = as.numeric(edu_f_recode))
+names(yu_psid_edu) <- c("fid", "pid", "mother_edu", "father_edu", "edu_m_recode", "edu_f_recode")
+#sss
+yu_psid_sss_rp <- df.psid_proposal%>%
+  dplyr::select(ER34501,ER30002,ER70879) #fid,pid, sss_rp
+yu_psid_sss_sp <- df.psid_proposal%>%
+  dplyr::select(ER34501,ER30002,ER70741) #fid,pid, sss_sp
+names(yu_psid_sss_rp) <- c("fid", "pid", "sss")
+names(yu_psid_sss_sp) <- c("fid", "pid", "sss")
+#merge
+#merge rp with rp sss
+yu_yadult_psid_rp <-  merge(yu_yadult_psid_rp, yu_psid_sss_rp, by = c("fid", "pid"))
+yu_yadult_psid_sp <-  merge(yu_yadult_psid_sp, yu_psid_sss_sp, by = c("fid", "pid"))
+#combine rp with sp
+yu_yadult_psid <- rbind(yu_yadult_psid_rp, yu_yadult_psid_sp)
+#merge with education and income
+yu_yadult_psid <- merge(yu_yadult_psid,  yu_psid_income, by = c("fid", "pid"))
+yu_yadult_psid <- merge(yu_yadult_psid, yu_psid_edu, by = c("fid", "pid"))
+#PCA
+yu_pca_psid <- yu_yadult_psid %>%
+  dplyr::select(ITN, edu_f_recode, edu_m_recode, sss)
+yu_pca_psid <- drop_na(yu_pca_psid)
+yu.pr_psid<-PCA(yu_pca_psid, scale.unit = TRUE, graph = TRUE)
+get_eigenvalue(yu.pr_cfps)
+fviz_eig(yu.pr_cfps)#scree plot
+var <- get_pca_var(yu.pr_cfps)
+var$coord
+#calculate SES as first component (?PCA does not appear to be single component)
+yu_psid <- yu_yadult_psid %>%
+  dplyr::mutate(SES_yu_cfps = 0.5152558*ITN + 0.7833663*edu_f_recode + 0.81539907*edu_m_recode + (-0.04682041)*sss)
+
+###################################################################################
+#Jednoróg,  2012 (!!!higher the score, lower the ses)
+#cfps
+jed_child_cfps <- df.children  %>%
+  dplyr::select(pid, pid_m)
+#recode education with eduy(0-22)
+#1, post college: master & phd (above 16); 2 college graduate: (16); 3 part college or post-high school training:(13-15); 
+#4 high school graduate: high school (12); 5, part hight school(10-12); 6, grammar school graduate(9), 7, part grammar school (below 9)
+jed_cfps_edu <- df.individual  %>%
+  dplyr::select(pid, eduy2010) %>%
+  dplyr::mutate(edu_m_recode = cut(eduy2010, breaks = c(23, 16.5, 15.5, 12.5, 11.5, 9.5, 8.5, -0.5), labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%
+  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode))
+key<- -1
+jed_cfps_edu$edu_m_recode <- reverse.code(key, jed_cfps_edu$edu_m_recode) #reverse the coding
+names(jed_cfps_edu) <- c("pid_m", "eduy", "edu_m_recode")
+#recode occupation:
+##CFPS
+#1= Higher controllers; 2=Lower controllers; 3=Routine nonmanual; 
+#4=Self-employed with employees; 5=Self-employed without employees; 7=Manual supervisor(?)
+#8=Skilled manual; 9=Semi-unskilld manual; 10=Agricultural laborers; 11= Self-employed agricultural workers; 
+#Jednoróg:
+#1, High executitve, major profession, etc.(1); 2, business manager, etc(2); 3, administrative personnel, etc.(3,7); 
+#4, clerical and sales, technician, etc.(4,5,6); 5, skilled manual(8); 6, machine operator, semi-skilled(9); 
+#7, unskilled(10,11); 8,Never employed (-8,80000? -8=not applicable; ; 80000=no occupation); NA (-7,-2,-1,70000, 90000)
+jed_cfps_occup <- df.individual %>%
+  dplyr::select(pid, qg307egp) %>%
+  dplyr::mutate(occup_ses = recode(qg307egp, "1"= 1, "2"=2, "3"=3,  "7"= 3, "4"=4, "5"= 4, "6"= 4, "8"= 5, "9"=6, "10"=7, "11"=7, "-8"=8,"80000"= 8, .default = -8))
+table(jed_cfps_occup$qg307egp)
+jed_cfps_occup$occup_ses[jed_cfps_occup$occup_ses <0] <- NA
+names(jed_cfps_occup) <- c("pid_m", "egp", "occup_ses")
+#merge income and occupation
+jed_cfps <- merge(jed_child_cfps, jed_cfps_edu, by = "pid_m")
+jed_cfps <- merge(jed_cfps, jed_cfps_occup, by = "pid_m")
+#composite ses: Maternal Edu (weighted 4) + Occup (weight 7)
+jed_cfps <- jed_cfps %>%
+  dplyr::mutate(SES_jed_cfps = 4*edu_m_recode + 7*occup_ses) 
+#psid?? no classification of occupation according to prestige
+
+###################################################################################
+
+
