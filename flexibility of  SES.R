@@ -385,8 +385,8 @@ mcder_mother_edu_occu <- df.individual %>%
 mcder_mother_edu_occu[mcder_mother_edu_occu == -8] <- NA
 names(mcder_mother_edu_occu) <- c("pid_m", "educ_m", "egp_m", "edu_m_recode", "occu_m_recode")
 #combine with children
-mcder_child_cfps <- merge(mcder_child_cfps, mcder_father_edu_occu, by = "pid_f")
-mcder_child_cfps <- merge(mcder_child_cfps, mcder_mother_edu_occu, by = "pid_m")
+mcder_child_cfps <- merge(mcder_child_cfps, mcder_father_edu_occu, by = "pid_f", all.x = TRUE)
+mcder_child_cfps <- merge(mcder_child_cfps, mcder_mother_edu_occu, by = "pid_m", all.x = TRUE)
 #composite ses (occupation x 5, education x 3)
 mcder_child_cfps <- mcder_child_cfps %>%
   dplyr::mutate(occu_f_recode = as.numeric(occu_f_recode),
@@ -399,6 +399,7 @@ mcder_child_cfps$SES_f[is.na(mcder_child_cfps$SES_f)] <- mcder_child_cfps$SES_m[
 mcder_child_cfps$SES_m[is.na(mcder_child_cfps$SES_m)] <- mcder_child_cfps$SES_f[is.na(mcder_child_cfps$SES_m)]#replace NA mother ses with father ses
 mcder_child_cfps <- mcder_child_cfps %>%
   dplyr::mutate(SES_mcder_cfps = (SES_m + SES_f)/2)
+summary(mcder_child_cfps)
 #PSID: not applicable(no occupation)
 
 ####################################Romeo, 2018a###############################################
@@ -446,8 +447,8 @@ romeo2_income <- df.family %>%
   dplyr::select(fincome, fid) %>% #family income (did not consider family size)
   dplyr::mutate(income_zscore = (fincome - mean(fincome, na.rm = TRUE))/sd(fincome, na.rm = TRUE))
 #combine education and income
-romeo2_child_cfps <- merge(romeo2_child_cfps, romeo2_father_edu_cfps, by = "pid_f")
-romeo2_child_cfps <- merge(romeo2_child_cfps, romeo2_mother_edu_cfps, by = "pid_m")
+romeo2_child_cfps <- merge(romeo2_child_cfps, romeo2_father_edu_cfps, by = "pid_f", all.x = TRUE)
+romeo2_child_cfps <- merge(romeo2_child_cfps, romeo2_mother_edu_cfps, by = "pid_m", all.X = TRUE)
 romeo2_child_cfps <- merge(romeo2_child_cfps, romeo2_income, by = "fid")
 #replace father/mother education if one is missing
 romeo2_child_cfps$edu_f_recode[is.na(romeo2_child_cfps$edu_f_recode)] <- romeo2_child_cfps$edu_m_recode[is.na(romeo2_child_cfps$edu_f_recode)]#replace NA father ses with mother ses
@@ -609,4 +610,66 @@ leo_edu_mother_pid <- merge(leo_education_psid, psid_mother, by = c("fid", "pid_
 leo_child_psid <- merge(psid_child, leo_edu_mother_pid, by = "fid")
 summary(leo_child_psid)
 
+####################################Ozernov-Palchik, O################################
+#same as romeo(a)--Barratt Simplified Measure of Social Status (BSMSS) 3-21(1-7 multiply 3)
+#CFPS
+#extract children
+ozer_child_cfps <- df.children %>%
+  dplyr::select(pid, pid_m, pid_f)
+#education
+ozer_education_cfps <- df.individual %>%
+  dplyr::select(pid, educ) %>%
+  dplyr::mutate(edu_bsmss = cut(educ, breaks = c(-0.5, 3.5, 5.5,6.5,10.5,13.5,14.5,16.5), labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%
+  dplyr::mutate(edu_bsmss = as.numeric(edu_bsmss)*3)
+#mother's education & father's education
+head(ozer_education_cfps)
+ozer_edu_mother_cfps<- ozer_education_cfps
+ozer_edu_father_cfps<- ozer_education_cfps
+names(ozer_edu_mother_cfps) <- c("pid_m","educ_m", "edu_m_recode")
+names(ozer_edu_father_cfps) <- c("pid_f","educ_f", "edu_f_recode")
 
+#merge together with children
+ozer_child_cfps <- merge(ozer_child_cfps, ozer_edu_father_cfps, by = "pid_f", all.x = TRUE)
+ozer_child_cfps <- merge(ozer_child_cfps, ozer_edu_mother_cfps, by = "pid_m", all.x = TRUE)
+summary(ozer_child_cfps)
+#replace father with mother and mother with father if one of them is NA
+ozer_child_cfps$edu_f_recode[is.na(ozer_child_cfps$edu_f_recode)] <- ozer_child_cfps$edu_m_recode[is.na(ozer_child_cfps$edu_f_recode)]#replace NA father ses with mother ses
+ozer_child_cfps$edu_m_recode[is.na(ozer_child_cfps$edu_m_recode)] <- ozer_child_cfps$edu_f_recode[is.na(ozer_child_cfps$edu_m_recode)]#replace NA mother ses with father ses
+#transform into ses (dichotomous)
+ozer_child_cfps <- ozer_child_cfps %>%
+  dplyr::mutate(edu_parents = edu_m_recode + edu_f_recode) %>%
+  dplyr::mutate(SES_ozer_cfps = cut(edu_parents, breaks = c(0, 18.5, 100), labels = c('1', '2')))%>%
+  dplyr::mutate(SES_ozer_cfps = as.numeric(SES_ozer_cfps))
+summary(ozer_child_cfps)
+
+#psid
+#extract participants
+psid_child
+psid_father
+psid_mother
+#education
+ozer_education_psid <- df.psid %>%
+  dplyr::select(ER34548,ER34501,ER30002) %>% #education, fid, pid
+  dplyr::mutate(edu_recode = cut(ER34548, breaks = c(-0.01, 6.5, 9.5,11.5,12.5,14.5,16.5, 17.4, 100), labels = c("1", "2", "3", "4", "5", "6", "7", "8")))%>%
+  dplyr::mutate(edu_recode = as.numeric(edu_recode))
+ozer_education_psid$edu_recode[ozer_education_psid$edu_recode == 8] <- NA 
+head(ozer_education_psid)
+#mother's education & father's education
+ozer_edu_mother_psid <- ozer_education_psid
+ozer_edu_father_psid <- ozer_education_psid
+names(ozer_edu_mother_psid) <- c("edu_raw_m", "fid", "pid_m", "edu_m_recode")
+names(ozer_edu_father_psid) <- c("edu_raw_f", "fid", "pid_f", "edu_f_recode")
+ozer_edu_mother_psid <- merge(psid_mother, ozer_edu_mother_psid, by = c("fid", "pid_m"), all.x = TRUE)
+ozer_edu_father_psid <- merge(psid_father, ozer_edu_father_psid, by = c("fid", "pid_f"), all.x = TRUE)
+#merge father mother and children
+ozer_child_psid <- merge(psid_child, ozer_edu_mother_psid, by = "fid", all.x = TRUE)
+ozer_child_psid <- merge(ozer_child_psid, ozer_edu_father_psid, by = "fid", all.x = TRUE)
+#replace father with mother and mother with father if one of them is NA
+ozer_child_psid$edu_f_recode[is.na(ozer_child_psid$edu_f_recode)] <- ozer_child_psid$edu_m_recode[is.na(ozer_child_psid$edu_f_recode)]#replace NA father ses with mother ses
+ozer_child_psid$edu_m_recode[is.na(ozer_child_psid$edu_m_recode)] <- ozer_child_psid$edu_f_recode[is.na(ozer_child_psid$edu_m_recode)]#replace NA mother ses with father ses
+##transform into ses (dichotomous)
+ozer_child_psid <- ozer_child_psid %>%
+  dplyr::mutate(edu_parents = edu_m_recode + edu_f_recode) %>%
+  dplyr::mutate(SES_ozer_psid = cut(edu_parents, breaks = c(0, 18.5, 100), labels = c('1', '2')))%>%
+  dplyr::mutate(SES_ozer_psid = as.numeric(SES_ozer_psid))
+summary(ozer_child_psid)
