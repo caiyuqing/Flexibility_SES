@@ -1,4 +1,4 @@
-#######################################
+#################################mental health###################
 #Mental health and cognition CPFS
 #children
 mental_children_cfps <- df.children %>%     
@@ -32,7 +32,7 @@ names(mental_psid) <- c("depression", "life_satisfaction", "fid", "pid")
 mental_psid$depression[mental_psid$depression == 99] <-NA
 mental_psid$life_satisfaction[mental_psid$life_satisfaction >5] <-NA
 
-###################################################################################
+#######################################extract data############################################
 #extract personal coding and SES indicator for each study 
 #betan
 SES_betan_child_cfps <- betan_child_cfps[,c("pid", "SES_betan_cfps")]
@@ -61,11 +61,14 @@ SES_kim_child_psid <- kim_child_psid[,c("pid", "fid", "SES_kim_psid")]
 #hanson
 SES_hanson_child_cfps <- hanson_child_cfps[, c("pid", "SES_hanson_cfps")]
 SES_hanson_child_psid <- hanson_child_psid[,c("pid", "fid", "SES_hanson_psid")]
-
 #leonard
 SES_leo_child_cfps <- leo_child_cfps[, c("pid", "SES_leo_cfps")]
 SES_leo_child_psid <- leo_child_psid[, c("pid", "fid", "SES_leo_psid")]
+#ozernov
+SES_ozer_child_cfps <- ozer_child_cfps[, c("pid", "SES_ozer_cfps")]
+SES_ozer_child_psid <- ozer_child_psid[, c("pid", "fid", "SES_ozer_psid")]
 
+#####################################cfps matrix##########################################
 #write a merge function for cfps
 merge_SES_CFPS <- function(x, y){
   df <- merge(x, y, by= "pid", all.x= TRUE, all.y= TRUE)
@@ -76,6 +79,7 @@ merge_SES_CFPS <- function(x, y){
 SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(SES_betan_child_cfps, SES_moog_child_cfps, SES_jed_child_cfps,
                                           SES_mcder_child_cfps, SES_romeo1_child_cfps,SES_romeo2_child_cfps,
                                           SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, SES_leo_child_cfps,
+                                          SES_ozer_child_cfps,
                                           mental_children_cfps))
 SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
 #SES_mental_CFPS <- drop_na(SES_mental_CFPS)
@@ -87,6 +91,7 @@ cor_ses_mental_cfps
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE)
 
+#####################################psid matrix##########################################
 #####correlation PSID######
 #write a merge function for psid
 merge_SES_PSID <- function(x, y){
@@ -105,6 +110,7 @@ summary(SES_mental_PSID)
 #correltaion of cfps
 library("Hmisc")
 cor_ses_mental_psid<- rcorr(as.matrix(SES_mental_PSID))
+cor_ses_mental_psid
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
