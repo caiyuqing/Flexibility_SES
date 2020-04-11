@@ -114,7 +114,7 @@ df.individual <- dfa0 %>%
                 ###subjective SES
                 qm401,	#Income level in local area
                 qm402,	#Social status in local area
-                qq601, qq602,qq603,qq604,qq605,qq606,#depression
+                qq601, qq602,qq603,qq604,qq605,qq606,depression,#depression
                 wordtest, mathtest) #cognitive ability
 ###family 
 df.family <- dff0 %>%
