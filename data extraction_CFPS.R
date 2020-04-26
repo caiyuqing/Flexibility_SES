@@ -3,7 +3,7 @@
 # Author      Date(yy-mm-dd)   Change History
 #==========================================
 # Cai, Y-Q    19-03-09         The first version
-# 
+# Hu, C-P     20-04-26         Validate the script
 # 
 #
 ###### input######
@@ -16,6 +16,10 @@
 ######################## Start of the script ###########################
 ### clean the memory to avoid unnecessary errors:
 rm(list = ls())
+Sys.setlocale("LC_ALL", "English")  # set local encoding to English
+Sys.setenv(LANG = "en") # set the feedback language to English
+options(scipen = 999)   # force R to output in decimal instead of scientifc notion
+options(digits=5)       # limit the number of reporting
 
 ### set directory to the folder of analytic data
 
@@ -30,14 +34,15 @@ if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r
 if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
 if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
 library("psych")
-library("dplyr")
+#library("dplyr")
 library("tidyverse")
 
-#read data
-dfc0 <- read.csv("data/2010child.csv", header=T)
-dfa0 <- read.csv("data/2010adult.csv", header=T)
-dff0 <- read.csv("data/2010family.csv", header=T)
-dfcom0 <- read.csv("data/2010community.csv", header= T)
+# read data
+# added fileEncoding to avoid junk text in the 1st colname
+dfc0 <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM")
+dfa0 <- read.csv("data/2010adult.csv", header=T, fileEncoding="UTF-8-BOM") 
+dff0 <- read.csv("data/2010family.csv", header=T, fileEncoding="UTF-8-BOM")
+dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  # 
 
 #extract related data according to SES 2010 codebook
 ##community 
