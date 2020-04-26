@@ -75,22 +75,35 @@ merge_SES_CFPS <- function(x, y){
   return(df)
 }
 #####correlation CFPS######
-#merge all SES cfps and mental health
+#merge all ordinal and continuous SES cfps and mental health 
 SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(SES_betan_child_cfps, SES_moog_child_cfps, SES_jed_child_cfps,
                                           SES_mcder_child_cfps, SES_romeo1_child_cfps,SES_romeo2_child_cfps,
-                                          SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, SES_leo_child_cfps,
-                                          SES_ozer_child_cfps,
+                                          SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, 
                                           mental_children_cfps))
 SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
-#SES_mental_CFPS <- drop_na(SES_mental_CFPS)
-#correltaion of cfps
-library("Hmisc")
-cor_ses_mental_cfps<- rcorr(as.matrix(SES_mental_CFPS))
+library("correlation")
+cor_ses_mental_cfps <- correlation(SES_mental_CFPS, method = "spearman")
+summary(cor_ses_mental_cfps)
+s<-as.table(cor_ses_mental_cfps$p)
+s
+#install.packages("ggcorrplot")
+library("ggcorrplot")
+library("corrplot")
+r<- as.matrix(cor_ses_mental_cfps)
+r
+summary(cor_ses_mental_cfps)
+cor_ses_mental_cfps$p
+p.mat <- as.matrix(cor_ses_mental_cfps$p)
+p.mat
 cor_ses_mental_cfps
+corrplot(r, p.mat = p.mat, insig = "p-value", sig.level = -1)
+
+,p.mat = p.mat, type = "upper", sig.level = c(.001, .01, .05), pch.cex = .9, pch.col = "white")
+correlation(SES_mental_CFPS_dichotomous, method = "biserial")
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
-chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE)
-
+chart.Correlation(cor_ses_mental_cfps, histogram=TRUE, density = TRUE)
+r
 #####################################psid matrix##########################################
 #####correlation PSID######
 #write a merge function for psid
@@ -107,10 +120,13 @@ SES_mental_PSID <- Reduce(merge_SES_PSID, list(SES_betan_child_psid, SES_moog_ch
                                                mental_psid_child))
 SES_mental_PSID <- SES_mental_PSID[, -c(1:2)] #delete pid column
 summary(SES_mental_PSID)
+
 #correltaion of cfps
 library("Hmisc")
-cor_ses_mental_psid<- rcorr(as.matrix(SES_mental_PSID))
-cor_ses_mental_psid
+cor_ses_mental_psid<- rcorr(as.matrix(SES_mental_PSID), type = "spearman")
+install.packages(correlation)
+library("correlation")
+cor_ses_mental_psid <- correlation
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
