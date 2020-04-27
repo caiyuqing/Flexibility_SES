@@ -40,9 +40,10 @@ library("tidyverse")
 library(foreign)
 
 #import data
-df_cfps <-  read.csv("CFPS2010_ses_adults.csv")
-
-df.children <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM")
+load("df.children.RData")
+load("df.individual.RData")
+load("df.community.RData")
+load("df.family.RData")
 #########################################################################################
 #######Betancourt, L, 2016###########
 #family income, maternal education
