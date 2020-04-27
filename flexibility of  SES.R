@@ -3,6 +3,7 @@
 # Author      Date(yy-mm-dd)   Change History
 #==========================================
 # Cai, Y-Q    20-03-15         The first version
+# Hu, C-P     20-04-27         Validate the script
 # 
 # 
 #
@@ -16,6 +17,10 @@
 ######################## Start of the script ###########################
 ### clean the memory to avoid unnecessary errors:
 rm(list = ls())
+Sys.setlocale("LC_ALL", "English")  # set local encoding to English
+Sys.setenv(LANG = "en") # set the feedback language to English
+options(scipen = 999)   # force R to output in decimal instead of scientifc notion
+options(digits=5)       # limit the number of reporting
 
 ### set directory to the folder of analytic data
 
@@ -32,10 +37,12 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 library("psych")
 library("dplyr")
 library("tidyverse")
+library(foreign)
 
 #import data
 df_cfps <-  read.csv("CFPS2010_ses_adults.csv")
 
+df.children <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM")
 #########################################################################################
 #######Betancourt, L, 2016###########
 #family income, maternal education
@@ -46,6 +53,7 @@ betan_child_cfps <- df.children %>%
 #drop NA
 betan_child_cfps[betan_child_cfps == -8] <-NA
 betan_child_cfps <- drop_na(betan_child_cfps)
+
 #select family income from family dataframe
 betan_family_cfps <- df.family %>%
   dplyr::select(fid, finc_per)
@@ -71,23 +79,28 @@ betan_child_cfps <- betan_child_cfps %>%
                 edu_m_recode = as.numeric(edu_m_recode)) %>% #convert into numeric variable
   dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)  #SES as composte of mean of itn and edu level
 table(betan_child_cfps$SES_betan_cfps)
+
 #PSID
-library(foreign)
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
 psid_child <- df.psid_proposal %>%
   dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex; age
-  dplyr::filter(ER34503 ==30) #extract children of rp
-psid_father <- df.psid_proposal %>% #extract rp and sp
+  dplyr::filter(ER34503 ==30) # Relation to the reference person is children-par
+
+psid_father <- df.psid_proposal %>% # extract rp and sp
+  # select Relation to the reference person, 2017 interview #, release #, personal #.
   dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
-  dplyr::filter(ER34503 == 10 & 20) %>%
-  dplyr::filter(ER32000 == 1) #male
+  # select relation to the reference person are: 10 - the reference person, or (|), 20-legal spouse of RP
+  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>% 
+  dplyr::filter(ER32000 == 1) # male
+
 psid_mother <- df.psid_proposal %>% #extract rp and sp
   dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
-  dplyr::filter(ER34503 == 10 & 20) %>%
+  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
   dplyr::filter(ER32000 == 2) #female
+
 names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age")
 names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
@@ -103,7 +116,8 @@ names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
 betan_psid_edu <- df.psid %>%
   dplyr::select(ER34548,ER34501,ER30002) %>% #education, fid, pid
-  dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
+  dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
+                                   labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
   dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode))
                                                     #1=<high school: <12; 2=high school: 12; 3=some college/technical: 13; 4=two-years: 14; 5=4-years: 15/16; 6=some graduate/MA/Phd: 17 above; NA: 99
 betan_psid_edu$edu_m_recode[betan_psid_edu$edu_m_recode == 7]<- NA 
@@ -120,10 +134,10 @@ names(betan_psid_income) <- c("income", "fid", "pid_m")
 betan_psid_income <- merge(betan_psid_income, familysize, by = "fid")
 ##recode family income according to poverty lineand family size
 betan_psid_income <- betan_psid_income %>%
-  dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% #poverty line 12060 for one people and increase 4180 for an extra person
+  dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
   dplyr::mutate(itn4 = itn1*4,
                 itn3 = itn1*3,
-                itn2 = itn1*2) %>% #4 cut-points
+                itn2 = itn1*2) %>% # 4 cut-points
   dplyr::mutate(income_itn1 = income- itn1,
                 income_itn2 = income- itn2,
                 income_itn3 = income- itn3,
@@ -136,7 +150,7 @@ betan_psid_income <- betan_psid_income %>%
                 income_itn2 = as.numeric(income_itn2)-1,
                 income_itn3 = as.numeric(income_itn3)-1,
                 income_itn4 = as.numeric(income_itn4)-1)%>% #convert to numeric and minus 1 to keep 0 and 1 coding
-  dplyr::mutate(itn = income_itn1 + income_itn2 + income_itn3 + income_itn4+1) #add 4 cut-point (e.g. four 0 means below poverty line: level 1)
+  dplyr::mutate(itn = income_itn1 + income_itn2 + income_itn3 + income_itn4+1) # add 4 cut-point (e.g. four 0 means below poverty line: level 1)
 
 #merge education and income
 betan_psid <- merge(psid_mother, betan_psid_edu, by = c("fid", "pid_m"), all.x = TRUE)
