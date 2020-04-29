@@ -80,15 +80,14 @@ merge_SES_CFPS <- function(x, y){
 }
 #####correlation CFPS######
 #merge all ordinal and continuous SES cfps and mental health 
-SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(SES_betan_child_cfps, SES_moog_child_cfps, SES_jed_child_cfps,
+SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(mental_children_cfps,SES_betan_child_cfps, SES_moog_child_cfps, SES_jed_child_cfps,
                                           SES_mcder_child_cfps, SES_romeo1_child_cfps,SES_romeo2_child_cfps,
                                           SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, 
-                                          mental_children_cfps,
                                           SES_leo_child_cfps, SES_ozer_child_cfps))
 SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
-SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
+SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
                                                "SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
-                                               "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps", "depression", "cognition")]
+                                               "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
 #extract colnames of SES_mental_CFPS
 dimname <- list(colnames(SES_mental_CFPS))
 dimname #see the names
@@ -105,7 +104,7 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
-cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+#cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
 #insert correlation matrix into the big matrix
 #r
 cormatrix_CFPS[1:n_o, 1:n_o] <- cor_ses_mental_cfps_ordinal$r
@@ -116,7 +115,7 @@ pmatrix_CFPS<-round(pmatrix_CFPS, digits = 5)
 
 #########biserial correlation##########
 #?I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
-#polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
+polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
 #so I use ltm::biserial.cor instead
 library("ltm")
 #install.packages("magicfor")
@@ -222,7 +221,17 @@ pmatrix_CFPS #see result
 #install.packages("ggcorrplot")
 library("ggcorrplot")
 library("corrplot")
-corrplot(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch", sig.level = 0.05)
+head(cormatrix_CFPS)
+colnames(cormatrix_CFPS) <- c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", #composite 1-6
+                         "i1", "i2","i3", #income 1-3
+                          #mental health
+                         "e1", "e2") #education 1-2
+rownames(cormatrix_CFPS) <- c("dep", "cog",
+                              "c1", "c2", "c3", "c4","c5", "c6", 
+                               "i1", "i2","i3",
+                               "e1", "e2")
+corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
+               cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
@@ -239,16 +248,14 @@ merge_SES_PSID <- function(x, y){
 #merge all SES PSID and mental health
 mental_psid_child <- merge(psid_child, mental_psid, by = c("pid", "fid"))
 mental_psid_child <- mental_psid_child[,c("depression", "life_satisfaction", "pid", "fid")]
-SES_mental_PSID <- Reduce(merge_SES_PSID, list(SES_betan_child_psid, SES_moog_child_psid, SES_romeo2_child_psid,
+SES_mental_PSID <- Reduce(merge_SES_PSID, list(mental_psid_child, SES_betan_child_psid, SES_moog_child_psid, SES_romeo2_child_psid,
                                                SES_qiu_child_psid, SES_kim_child_psid, SES_hanson_child_psid, 
-                                               mental_psid_child, 
-                                               SES_leo_child_psid, SES_ozer_child_psid))
+                                                SES_leo_child_psid, SES_ozer_child_psid))
 SES_mental_PSID <- SES_mental_PSID[, -c(1:2)] #delete pid column
 summary(SES_mental_PSID)
 
-SES_mental_PSID_ordinal <- SES_mental_PSID[, c("SES_betan_psid","SES_moog_psid","SES_romeo2_psid",
-                                               "SES_qiu_psid","SES_kim_psid","SES_hanson_psid", 
-                                               "depression","life_satisfaction")]
+SES_mental_PSID_ordinal <- SES_mental_PSID[, c("depression","life_satisfaction","SES_betan_psid","SES_moog_psid","SES_romeo2_psid",
+                                               "SES_qiu_psid","SES_kim_psid","SES_hanson_psid")]
 #extract colnames of SES_mental_PSID
 dimname <- list(colnames(SES_mental_PSID))
 dimname #see the names
@@ -381,11 +388,25 @@ pmatrix_PSID #see result
 #install.packages("ggcorrplot")
 library("ggcorrplot")
 library("corrplot")
-corrplot(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05)
+colnames(cormatrix_PSID) <- c("dep", "LS","c1", "c2", "c3", #composite 1-3
+                              "i1", "i2","i3", #income 1-3
+                              #mental health
+                              "e1", "e2") #education 1-2
+rownames(cormatrix_PSID) <- c("dep", "cog",
+                              "c1", "c2", "c3", 
+                              "i1", "i2","i3",
+                              "e1", "e2")
+
+corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
+         cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
+
+
+
+
 
 
 ###########################################################

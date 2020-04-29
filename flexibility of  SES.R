@@ -53,7 +53,6 @@ df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TR
 familysize_psid <- data.frame(table(df.psid$ER34501))
 names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
 
->>>>>>> dfdb92ccffa3c6928f4a600f18ffecfdf49d0915
 #########################################################################################
 #######Betancourt, L, 2016###########
 #family income, maternal education
@@ -112,6 +111,7 @@ psid_mother <- df.psid_proposal %>% #extract rp and sp
 names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age")
 names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
+
 #another possible way to identify mother (?)
 #psid_mother <- df.psid_proposal %>%
 #  dplyr::select(ER66021,ER34503,ER34501,ER30002,ER32000) %>% #children in FU; relation to RP; fid; pid; sex
