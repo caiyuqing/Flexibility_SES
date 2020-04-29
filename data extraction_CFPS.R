@@ -235,16 +235,16 @@ df.children <- dfc0 %>%
 df.family_community <- merge(df.family, df.community, by = "cid", all.x = TRUE)
 CFPS2010_ses_adults <- merge(df.individual, df.family_community, by = "fid", all.x= TRUE)
 #save data as RData for futher analysis
-save(CFPS2010_ses_adults, file = 'CFPS2010_adult.RData')
-save(df.children, file = 'df.children.RData')
-save(df.individual, file = 'df.individual.RData')
-save(df.community, file = 'df.community.RData')
-save(df.family, file = 'df.family.RData')
+save(CFPS2010_ses_adults, df.children, df.individual, df.community, df.family,
+     file = 'CFPS2010.RData')
+#save(df.children, file = 'df.children.RData')
+#save(df.individual, file = 'df.individual.RData')
+#save(df.community, file = 'df.community.RData')
+#save(df.family, file = 'df.family.RData')
 write.csv(CFPS2010_ses_adults, file = "CFPS2010_ses_adults.csv", row.names = FALSE)
 
 # Test the save data
 df.test <- CFPS2010_ses_adults
 rm(CFPS2010_ses_adults)
-load("CFPS2010_adult.RData")
+load("CFPS2010.RData")
 all.equal(CFPS2010_ses_adults, df.test)
-
