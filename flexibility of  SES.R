@@ -52,7 +52,6 @@ df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TR
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
 names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
-
 #########################################################################################
 #######Betancourt, L, 2016###########
 #family income, maternal education
@@ -615,34 +614,31 @@ kim_income_cfps <- df.family  %>%
   dplyr::select(fid, finc_per) %>%
   dplyr::mutate(INR = finc_per/1274)  %>%
   dplyr::mutate(INR = log10(INR))
-
 kim_child_cfps <- merge(kim_child_cfps, kim_income_cfps, by = "fid", all.x = TRUE)
 names(kim_child_cfps) <- c("fid", "pid","income_per","SES_kim_cfps")
-summary(kim_child_cfps)
 kim_child_cfps$SES_kim_cfps[!is.finite(kim_child_cfps$SES_kim_cfps)] <-NA #set inf as NA for further correlation analysis
-summary(kim_child_cfps$SES_kim_cfps)
+summary(kim_child_cfps)
 
 # psid:
-#familysize_psid
+familysize_psid$fid <- as.numeric(familysize_psid$fid)
+
 kim_income_psid <- df.psid_proposal%>%
   dplyr::select(ER34501,ER30002, ER71426) %>%
   dplyr::rename(fid = ER34501,
                 pid = ER30002,
                 fincome = ER71426) %>% #fid, pid, total family income
-# names(kim_income_psid) <- c("fid", "pid", "fincome")
-
   dplyr::left_join(., familysize_psid, by = "fid", all.x = TRUE) %>%
-  #kim_income_psid %>%
-  dplyr::mutate(poverty = 12060 +  (familysize_psid-1)*4180) %>% # calculate poverty line for every family
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>% # calculate poverty line for every family
   dplyr::mutate(SES_kim_psid = fincome/poverty) %>%          # INR = SES
   dplyr::mutate(SES_kim_psid = log10(SES_kim_psid))         # log transformation
-
+kim_income_psid$poverty
 summary(kim_child_psid)
+head(kim_income_psid)
 
 kim_child_psid <- merge(psid_child, kim_income_psid, by = c("fid", "pid"), all.x = TRUE)
 kim_child_psid$SES_kim_psid[!is.finite(kim_child_psid$SES_kim_psid)] <-NA #set inf as NA for further correlation analysis
 summary(kim_child_psid$SES_kim_psid)
-
+summary(kim_child_cfps$SES_kim_cfps)
 ########################## Hanson, 2013 ################
 # CFPS
 # select children
@@ -664,12 +660,13 @@ hanson_income_psid <- df.psid_proposal%>%
 names(hanson_income_psid) <- c("fid","pid", "fincome")
 hanson_income_psid <- merge(hanson_income_psid, familysize_psid, by = "fid", all.x = TRUE)
 hanson_income_psid  <- hanson_income_psid %>%
-  dplyr::mutate(poverty = 12060 +  (familysize_psid-1)*4180) %>%#calculate poverty line for every family
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%#calculate poverty line for every family
   dplyr::mutate(FPL = fincome/poverty) %>% #calculate FPL according to poverty line
   dplyr::mutate(SES_hanson_psid = cut(FPL, breaks = c(0, 2, 4, Inf), labels = c("1", "2", "3")))%>% #200%, 400% of poverty line as cut point
   dplyr::mutate(SES_hanson_psid = as.numeric(SES_hanson_psid)) 
 hanson_child_psid <- merge(psid_child, hanson_income_psid, by= c("fid", "pid"), all.x = TRUE)
-
+table(hanson_child_cfps$SES_hanson_cfps)
+table(hanson_child_psid$SES_hanson_psid)
 ####################Leonard, 2019######################
 #maternal education: dichchotomous, divided by college
 #CFPS
