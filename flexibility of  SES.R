@@ -51,6 +51,7 @@ df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TR
 
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
+familysize_psid$fid <- as.numeric(familysize_psid$fid)
 names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
 #########################################################################################
 #######Betancourt, L, 2016###########
@@ -140,7 +141,7 @@ names(betan_psid_income) <- c("income", "fid", "pid_m")
 betan_psid_income <- merge(betan_psid_income, familysize_psid, by = "fid")
 ##recode family income according to poverty lineand family size
 betan_psid_income <- betan_psid_income %>%
-  dplyr::mutate(itn1 = 12060 +  (familysize_psid-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
+  dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
   dplyr::mutate(itn4 = itn1*4,
                 itn3 = itn1*3,
                 itn2 = itn1*2) %>% # 4 cut-points
@@ -323,7 +324,7 @@ group_median <- yu_psid_income %>%
   dplyr::summarise(group_median = median(fincome))
 yu_psid_income <- merge(yu_psid_income, group_median, by= "income_cat") #merge income median with main data frame
 yu_psid_income <- yu_psid_income %>%
-  dplyr::mutate(poverty = 12060 +  (familysize_psid-1)*4180) %>%  #calculate poverty line according to family size
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%  #calculate poverty line according to family size
   dplyr::mutate(ITN = group_median/poverty) #calculate ITN: group_median divide poverty line
 table(yu_psid_income$ITN) #check ITN
 #parents' education
@@ -620,8 +621,6 @@ kim_child_cfps$SES_kim_cfps[!is.finite(kim_child_cfps$SES_kim_cfps)] <-NA #set i
 summary(kim_child_cfps)
 
 # psid:
-familysize_psid$fid <- as.numeric(familysize_psid$fid)
-
 kim_income_psid <- df.psid_proposal%>%
   dplyr::select(ER34501,ER30002, ER71426) %>%
   dplyr::rename(fid = ER34501,

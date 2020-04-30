@@ -88,6 +88,7 @@ SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
 SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
                                                "SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
                                                "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
+SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("SES_leo_cfps", "SES_ozer_cfps")]
 #extract colnames of SES_mental_CFPS
 dimname <- list(colnames(SES_mental_CFPS))
 dimname #see the names
@@ -104,7 +105,8 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
-#cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+cor_ses_mental_cfps_ordinal
 #insert correlation matrix into the big matrix
 #r
 cormatrix_CFPS[1:n_o, 1:n_o] <- cor_ses_mental_cfps_ordinal$r
@@ -115,7 +117,7 @@ pmatrix_CFPS<-round(pmatrix_CFPS, digits = 5)
 
 #########biserial correlation##########
 #?I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
-polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
+#polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
 #so I use ltm::biserial.cor instead
 library("ltm")
 #install.packages("magicfor")
