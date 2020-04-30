@@ -230,7 +230,7 @@ rownames(cormatrix_CFPS) <- c("dep", "cog",
                               "c1", "c2", "c3", "c4","c5", "c6", 
                                "i1", "i2","i3",
                                "e1", "e2")
-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
+corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
                cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##install.packages("PerformanceAnalytics")
@@ -397,17 +397,25 @@ rownames(cormatrix_PSID) <- c("dep", "cog",
                               "i1", "i2","i3",
                               "e1", "e2")
 
-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
+corrplot_PSID <-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
          cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
 
-
-
-
-
+#create figure of two correlational matrix in one pdf
+pdf("Correlational matrix.pdf",width=15,height=9)
+opar<-par(no.readonly=T)
+par(mfrow=c(1,2))
+corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
+                              cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix CFPS", side = 1, line = -1)
+corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
+                               cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix PSID", side = 1, line = -1)
+par(opar)
+dev.off()
 
 ###########################################################
 ###################Betancourt, L, 2016:###################
