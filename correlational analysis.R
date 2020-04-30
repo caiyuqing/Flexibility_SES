@@ -1,14 +1,16 @@
+library(tidyverse)
+
 #################################mental health###################
-#Mental health and cognition CPFS
-#children
+# Mental health and cognition CPFS
+# children
 mental_children_cfps <- df.children %>%     
-  dplyr::select(wn401,	#Feel depressed and cannot cheer up
-                wn402,	#Feel nervous
-                wn403,	#Feel agitated or upset and cannot remain calm 
-                wn404,	#Feel hopeless about the future 
-                wn405,	#Feel that everything is difficult 
-                wn406,	#Think life is meaningless 
-                ###cognitive ability	
+  dplyr::select(wn401,	# Feel depressed and cannot cheer up
+                wn402,	# Feel nervous
+                wn403,	# Feel agitated or upset and cannot remain calm 
+                wn404,	# Feel hopeless about the future 
+                wn405,	# Feel that everything is difficult 
+                wn406,	# Think life is meaningless 
+                ### cognitive ability	
                 wordtest,	
                 mathtest, pid) 
 mental_children_cfps[mental_children_cfps == -8] <- NA
@@ -18,12 +20,14 @@ mental_children_cfps <- mental_children_cfps %>%
   dplyr::select(pid, depression, cognition)
 mental_children_cfps[mental_children_cfps < 0] <-NA
 mental_children_cfps <- drop_na(mental_children_cfps) #3355 left
-#adult
+
+# adult
 mental_adult_cfps <- df.individual %>%
   dplyr::select(depression, wordtest, mathtest, pid)%>%  #depression sum score, word/math test
   dplyr::mutate(cognition = wordtest + mathtest) %>%
   dplyr::select(pid, depression, cognition)
 mental_adult_cfps <- drop_na(mental_adult_cfps)
+
 # Mental health and cognition psid
 mental_psid <- df.psid %>%
   dplyr::select(ER70680, #sum for depression: very healthy 0----24 very depressed
@@ -33,53 +37,54 @@ names(mental_psid) <- c("depression", "life_satisfaction", "fid", "pid")
 mental_psid$depression[mental_psid$depression == 99] <-NA
 mental_psid$life_satisfaction[mental_psid$life_satisfaction >5] <-NA
 mental_psid$life_satisfaction[mental_psid$life_satisfaction <1] <-NA
+
 # reverse score for depresion and life_satisfaction (higher-better mental health)
 mental_psid <- mental_psid %>%
   dplyr::mutate(depression = -depression + 24,
                 life_satisfaction = -life_satisfaction + 6) 
 
-#######################################extract data############################################
-#extract personal coding and SES indicator for each study 
-#betan
+####################################### extract data ############################################
+# extract personal coding and SES indicator for each study 
+# betan
 SES_betan_child_cfps <- betan_child_cfps[,c("pid", "SES_betan_cfps")]
 SES_betan_child_psid <- betan_child_psid[,c("pid", "fid", "SES_betan_psid")]
-#moog
+# moog
 SES_moog_child_cfps <- moog_child_cfps[,c("pid", "SES_moog_cfps")]
 SES_moog_child_psid <- moog_child_psid[,c("pid", "fid", "SES_moog_psid")]
-#Jed
+# Jed
 SES_jed_child_cfps <- jed_cfps[,c("pid", "SES_jed_cfps")]
-#mcder
+# mcder
 SES_mcder_child_cfps <- mcder_child_cfps[,c("pid", "SES_mcder_cfps")]
-#romeo1
+# romeo1
 SES_romeo1_child_cfps <- romeo1_child_cfps[,c("pid", "SES_romeo1_cfps")]
-#romeo2
+# romeo2
 SES_romeo2_child_cfps <- romeo2_child_cfps[,c("pid", "SES_romeo2_cfps")]
 SES_romeo2_child_psid <- romeo2_child_psid[,c("pid", "SES_romeo2_psid", "fid")]
 head(SES_romeo2_child_psid)
-#qiu
+# qiu
 SES_qiu_child_cfps <- qiu_child_cfps[,c("pid","SES_qiu_cfps")]
 SES_qiu_child_psid <- qiu_child_psid[,c("pid", "fid", "SES_qiu_psid")]
-#kim
+# kim
 SES_kim_child_cfps <- kim_child_cfps[,c("pid","SES_kim_cfps")]
 SES_kim_child_psid <- kim_child_psid[,c("pid", "fid", "SES_kim_psid")]
-#hanson
+# hanson
 SES_hanson_child_cfps <- hanson_child_cfps[, c("pid", "SES_hanson_cfps")]
 SES_hanson_child_psid <- hanson_child_psid[,c("pid", "fid", "SES_hanson_psid")]
-#leonard
+# leonard
 SES_leo_child_cfps <- leo_child_cfps[, c("pid", "SES_leo_cfps")]
 SES_leo_child_psid <- leo_child_psid[, c("pid", "fid", "SES_leo_psid")]
-#ozernov
+# ozernov
 SES_ozer_child_cfps <- ozer_child_cfps[, c("pid", "SES_ozer_cfps")]
 SES_ozer_child_psid <- ozer_child_psid[, c("pid", "fid", "SES_ozer_psid")]
 
-#####################################cfps matrix##########################################
-#write a merge function for cfps
+##################################### cfps matrix ##########################################
+# write a merge function for cfps
 merge_SES_CFPS <- function(x, y){
   df <- merge(x, y, by= "pid", all.x= TRUE, all.y= TRUE)
   return(df)
 }
-#####correlation CFPS######
-#merge all ordinal and continuous SES cfps and mental health 
+##### correlation CFPS######
+# merge all ordinal and continuous SES cfps and mental health 
 SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(mental_children_cfps,SES_betan_child_cfps, SES_moog_child_cfps, SES_jed_child_cfps,
                                           SES_mcder_child_cfps, SES_romeo1_child_cfps,SES_romeo2_child_cfps,
                                           SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, 
@@ -88,10 +93,10 @@ SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
 SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
                                                "SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
                                                "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
-#extract colnames of SES_mental_CFPS
+# extract colnames of SES_mental_CFPS
 dimname <- list(colnames(SES_mental_CFPS))
-dimname #see the names
-#build a matrix for corrrelation result
+dimname # see the names
+# build a matrix for corrrelation result
 n_o <-11 #set number of ordinal variables
 n_d <-2 #set number of dichotomus
 #r
@@ -127,21 +132,21 @@ magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(biserial.cor(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$SES_leo_cfps, use = "complete.obs", level = 2))
 }
-leo_biserial <-magic_result_as_dataframe()  
-leo_biserial<- leo_biserial[,2] #select the vector of result
+leo_biserial <- magic_result_as_dataframe()  
+leo_biserial <- leo_biserial[,2] # select the vector of result
 leo_biserial
 
-#p
-#extract cor.test result as the results for the p-value of point-biserial test
+# p
+# extract cor.test result as the results for the p-value of point-biserial test
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(cor.test(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$SES_leo_cfps, use = "complete.obs", level = 2))
 }
-leo_biserial_cortest <-magic_result_as_dataframe()  
-leo_biserial_cortest<-leo_biserial_cortest[,2]
+leo_biserial_cortest <- magic_result_as_dataframe()  
+leo_biserial_cortest <- leo_biserial_cortest[,2]
 leo_biserial_cortest #see result
 
-#extract p-value from cor.test result
+# extract p-value from cor.test result
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(leo_biserial_cortest[[i]]$p.value)
@@ -150,8 +155,8 @@ leo_biserial_p <- magic_result_as_dataframe()
 leo_biserial_p <- leo_biserial_p[,2]
 leo_biserial_p<-round(leo_biserial_p, digits = 5) #see result
 
-#calculate correlation between ozer and other ordinal variable
-#r
+# calculate correlation between ozer and other ordinal variable
+# r
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(ltm::biserial.cor(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$SES_ozer_cfps, use = "complete.obs", level= 2))
@@ -159,8 +164,9 @@ for (i in 1:n_o) {
 ozer_biserial <-magic_result_as_dataframe()  
 ozer_biserial<- ozer_biserial[,2] #select the vector of result
 ozer_biserial
-#p
-#extract cor.test result as the results for the p-value of point-biserial test
+
+# p
+# extract cor.test result as the results for the p-value of point-biserial test
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(cor.test(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$SES_ozer_cfps, use = "complete.obs", level = 2))
@@ -168,7 +174,8 @@ for (i in 1:n_o) {
 ozer_biserial_cortest <-magic_result_as_dataframe()  
 ozer_biserial_cortest<-ozer_biserial_cortest[,2]
 ozer_biserial_cortest #see result
-#extract p-value from cor.test result
+
+# extract p-value from cor.test result
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(ozer_biserial_cortest[[i]]$p.value)
@@ -177,48 +184,52 @@ ozer_biserial_p <- magic_result_as_dataframe()
 ozer_biserial_p <- ozer_biserial_p[,2]
 ozer_biserial_p<-round(ozer_biserial_p, digits = 5) #see result
 
-#insert biserial correlation into the big matrix
-#r
-#insert columns and rows and dignol
-#columns
+# insert biserial correlation into the big matrix
+# r
+# insert columns and rows and dignol
+# columns
 cormatrix_CFPS[1:n_o,(n_o+1)] <- leo_biserial
 cormatrix_CFPS[1:n_o,(n_o+2)] <- ozer_biserial
-#rows
+# rows
 cormatrix_CFPS[(n_o+1), 1:(n_o)]<- leo_biserial
 cormatrix_CFPS[(n_o+2), 1:(n_o)]<-ozer_biserial
-#diagnol
+# diagnol
 diag(cormatrix_CFPS)<-1 # insert 1 in diagnal 
 cormatrix_CFPS
-#p
-#insert columns and rows and dignol
-#columns
+
+# p
+# insert columns and rows and dignol
+# columns
 pmatrix_CFPS[1:n_o,(n_o +1)] <- leo_biserial_p
 pmatrix_CFPS[1:n_o,(n_o +2)] <- ozer_biserial_p
 pmatrix_CFPS
-#rows
+
+# rows
 pmatrix_CFPS[(n_o +1), 1:(n_o)]<- leo_biserial_p
 pmatrix_CFPS[(n_o +2), 1:(n_o)]<-ozer_biserial_p
-#diagnol
+# diagnol
 diag(pmatrix_CFPS)<-NA # insert NA in diagnal 
 pmatrix_CFPS
 
-#######phi coefficient
-#calculate phi coefficient between dichotomous variables
+####### phi coefficient
+# calculate phi coefficient between dichotomous variables
 phi_leo_ozer <-phi(table(SES_mental_CFPS_dicho))
-#p-value for phi coefficient
+# p-value for phi coefficient
 phi_leo_ozer_cortest <- cor.test(SES_mental_CFPS_dicho$SES_leo_cfps,SES_mental_CFPS_dicho$SES_ozer_cfps, use = "complete.obs", method = "pearson")
 phi_leo_ozer_p <- round(phi_leo_ozer_cortest$p.value, digits = 5)
-#insert phi coeefficient into the big matrix
-#r
+
+# insert phi coeefficient into the big matrix
+# r
 cormatrix_CFPS[(n_o +1),(n_o +2)] <- phi_leo_ozer
 cormatrix_CFPS[(n_o +2),(n_o +1)] <- phi_leo_ozer
 cormatrix_CFPS #see result
-#p
+
+# p
 pmatrix_CFPS[(n_o +1),(n_o +2)] <- phi_leo_ozer_p
 pmatrix_CFPS[(n_o +2),(n_o +1)] <- phi_leo_ozer_p
 pmatrix_CFPS #see result
 
-#install.packages("ggcorrplot")
+# install.packages("ggcorrplot")
 library("ggcorrplot")
 library("corrplot")
 head(cormatrix_CFPS)
@@ -233,13 +244,13 @@ rownames(cormatrix_CFPS) <- c("dep", "cog",
 corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
                cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
-##install.packages("PerformanceAnalytics")
+## install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE, method = "spearman")
 
-#####################################psid matrix##########################################
-#####correlation PSID######
-#write a merge function for psid
+##################################### psid matrix##########################################
+##### correlation PSID######
+# write a merge function for psid
 merge_SES_PSID <- function(x, y){
   df <- merge(x, y, by= c("pid", "fid"),all.x= TRUE, all.y= TRUE)
   return(df)
@@ -403,10 +414,6 @@ corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 
 ##install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
 chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
-
-
-
-
 
 
 ###########################################################
