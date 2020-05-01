@@ -49,6 +49,11 @@ load("df.family.RData")  # load dataframes: df.children, individual , community,
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 
+## extract familysize_psid
+familysize_psid <- data.frame(table(df.psid$ER34501))
+familysize_psid$fid <- as.numeric(familysize_psid$fid)
+names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
+
 #########################################################################################
 #######Betancourt, L, 2016###########
 #family income, maternal education
@@ -136,7 +141,7 @@ names(betan_psid_income) <- c("income", "fid", "pid_m")
 betan_psid_income <- merge(betan_psid_income, familysize_psid, by = "fid")
 ##recode family income according to poverty lineand family size
 betan_psid_income <- betan_psid_income %>%
-  dplyr::mutate(itn1 = 12060 +  (familysize_psid-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
+  dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
   dplyr::mutate(itn4 = itn1*4,
                 itn3 = itn1*3,
                 itn2 = itn1*2) %>% # 4 cut-points
@@ -320,7 +325,7 @@ group_median <- yu_psid_income %>%
   dplyr::summarise(group_median = median(fincome))
 yu_psid_income <- merge(yu_psid_income, group_median, by= "income_cat") #merge income median with main data frame
 yu_psid_income <- yu_psid_income %>%
-  dplyr::mutate(poverty = 12060 +  (familysize_psid-1)*4180) %>%  #calculate poverty line according to family size
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%  #calculate poverty line according to family size
   dplyr::mutate(ITN = group_median/poverty) #calculate ITN: group_median divide poverty line
 table(yu_psid_income$ITN) #check ITN
 
@@ -623,12 +628,10 @@ kim_income_cfps <- df.family  %>%
   dplyr::select(fid, finc_per) %>%
   dplyr::mutate(INR = finc_per/1274)  %>%
   dplyr::mutate(INR = log10(INR))
-
 kim_child_cfps <- merge(kim_child_cfps, kim_income_cfps, by = "fid", all.x = TRUE)
 names(kim_child_cfps) <- c("fid", "pid","income_per","SES_kim_cfps")
-summary(kim_child_cfps)
 kim_child_cfps$SES_kim_cfps[!is.finite(kim_child_cfps$SES_kim_cfps)] <-NA #set inf as NA for further correlation analysis
-summary(kim_child_cfps$SES_kim_cfps)
+summary(kim_child_cfps)
 
 # psid:
 # familysize_psid
@@ -646,19 +649,18 @@ kim_income_psid <- df.psid_proposal%>%
   dplyr::rename(fid = ER34501,
                 pid = ER30002,
                 fincome = ER71426) %>% #fid, pid, total family income
-# names(kim_income_psid) <- c("fid", "pid", "fincome")
   dplyr::left_join(., familysize_psid, by = "fid", all.x = TRUE) %>%
-  #kim_income_psid %>%
   dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>% # calculate poverty line for every family
   dplyr::mutate(SES_kim_psid = fincome/poverty) %>%          # INR = SES
   dplyr::mutate(SES_kim_psid = log10(SES_kim_psid))         # log transformation
-
-summary(kim_income_psid)
+kim_income_psid$poverty
+summary(kim_child_psid)
+head(kim_income_psid)
 
 kim_child_psid <- merge(psid_child, kim_income_psid, by = c("fid", "pid"), all.x = TRUE)
 kim_child_psid$SES_kim_psid[!is.finite(kim_child_psid$SES_kim_psid)] <-NA #set inf as NA for further correlation analysis
 summary(kim_child_psid$SES_kim_psid)
-
+summary(kim_child_cfps$SES_kim_cfps)
 ########################## Hanson, 2013 ################
 # CFPS
 # select children
@@ -688,10 +690,12 @@ hanson_income_psid  <- hanson_income_psid %>%
   dplyr::mutate(SES_hanson_psid = as.numeric(SES_hanson_psid)) 
 hanson_child_psid <- merge(psid_child, hanson_income_psid, by= c("fid", "pid"), all.x = TRUE)
 
-#################### Leonard, 2019 ######################
-# maternal education: dichchotomous, divided by college
-# CFPS
-# extract children
+table(hanson_child_cfps$SES_hanson_cfps)
+table(hanson_child_psid$SES_hanson_psid)
+####################Leonard, 2019######################
+#maternal education: dichchotomous, divided by college
+#CFPS
+#extract children
 leo_child_cfps <- df.children %>%
   dplyr::select(pid, pid_m)
 leo_child_cfps[leo_child_cfps ==-8] <- NA

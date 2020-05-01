@@ -93,7 +93,10 @@ SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
 SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
                                                "SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
                                                "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
-# extract colnames of SES_mental_CFPS
+
+SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("SES_leo_cfps", "SES_ozer_cfps")]
+#extract colnames of SES_mental_CFPS
+
 dimname <- list(colnames(SES_mental_CFPS))
 dimname # see the names
 # build a matrix for corrrelation result
@@ -109,7 +112,8 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
-#cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+cor_ses_mental_cfps_ordinal
 #insert correlation matrix into the big matrix
 #r
 cormatrix_CFPS[1:n_o, 1:n_o] <- cor_ses_mental_cfps_ordinal$r
@@ -120,7 +124,7 @@ pmatrix_CFPS<-round(pmatrix_CFPS, digits = 5)
 
 #########biserial correlation##########
 #?I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
-polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
+#polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
 #so I use ltm::biserial.cor instead
 library("ltm")
 #install.packages("magicfor")
@@ -241,12 +245,13 @@ rownames(cormatrix_CFPS) <- c("dep", "cog",
                               "c1", "c2", "c3", "c4","c5", "c6", 
                                "i1", "i2","i3",
                                "e1", "e2")
-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
+corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
                cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
-## install.packages("PerformanceAnalytics")
-library(PerformanceAnalytics)
-chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE, method = "spearman")
+
+##install.packages("PerformanceAnalytics")
+#library(PerformanceAnalytics)
+#chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE, method = "spearman")
 
 ##################################### psid matrix##########################################
 ##### correlation PSID######
@@ -408,13 +413,26 @@ rownames(cormatrix_PSID) <- c("dep", "cog",
                               "i1", "i2","i3",
                               "e1", "e2")
 
-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
+corrplot_PSID <-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "pch", sig.level = 0.05,
          cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##install.packages("PerformanceAnalytics")
-library(PerformanceAnalytics)
-chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
 
+#library(PerformanceAnalytics)
+#chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
+
+#create figure of two correlational matrix in one pdf
+pdf("Correlational matrix.pdf",width=15,height=9)
+opar<-par(no.readonly=T)
+par(mfrow=c(1,2))
+corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "blank",sig.level = 0.05,
+                              cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix CFPS", side = 1, line = -1)
+corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "blank", sig.level = 0.05,
+                               cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix PSID", side = 1, line = -1)
+par(opar)
+dev.off()
 
 ###########################################################
 ###################Betancourt, L, 2016:###################
