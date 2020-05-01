@@ -112,7 +112,7 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
-cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
+cor_ses_mental_cfps_ordinal <- Hmisc::rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
 cor_ses_mental_cfps_ordinal
 #insert correlation matrix into the big matrix
 #r
@@ -288,7 +288,7 @@ colnames(pmatrix_PSID)  <-dimname[[1]]
 pmatrix_PSID
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
-cor_ses_mental_psid_ordinal <- rcorr(as.matrix(SES_mental_PSID_ordinal), type = "spearman")
+cor_ses_mental_psid_ordinal <- Hmisc::rcorr(as.matrix(SES_mental_PSID_ordinal), type = "spearman")
 #insert correlation matrix into the big matrix
 #r
 cormatrix_PSID[1:n_o, 1:n_o] <- cor_ses_mental_psid_ordinal$r
@@ -516,5 +516,3 @@ ggplot(betan_moog_cfps,aes(x=SES_betan_cfps,y=SES_moog_cfps)) + stat_binhex()+ g
 betan_moog_psid <-  merge(moog_child_psid, betan_child_psid, by =  c("pid", "fid", "pid_m","sex_m","sex", "relation_rp_m", "age"))
 cor.test(betan_moog_psid$SES_moog_psid, betan_moog_psid$SES_betan_psid)
 ggplot(betan_moog_psid,aes(x=SES_moog_psid,y=SES_betan_psid)) + stat_binhex()+ geom_smooth(method = "lm", colour = "red", se = T) 
-
-

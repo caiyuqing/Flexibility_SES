@@ -37,13 +37,14 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 library("psych")
 library("dplyr")
 library("tidyverse")
-library(foreign)
+library("foreign")
 
 #import data CFPS
-load("df.children.RData")
-load("df.individual.RData")
-load("df.community.RData")
-load("df.family.RData")  # load dataframes: df.children, individual , community, family
+load("CFPS2010.RData")
+#load("df.children.RData")
+#load("df.individual.RData")
+#load("df.community.RData")
+#load("df.family.RData")  # load dataframes: df.children, individual , community, family
 
 # PSID
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
@@ -51,8 +52,8 @@ df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TR
 
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
-familysize_psid$fid <- as.numeric(familysize_psid$fid)
 names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
+familysize_psid$fid <- as.numeric(as.character(familysize_psid$fid))
 
 #########################################################################################
 #######Betancourt, L, 2016###########
@@ -804,3 +805,4 @@ ozer_child_psid <- ozer_child_psid %>%
   dplyr::mutate(SES_ozer_psid = cut(edu_parents, breaks = c(0, 10, 100), labels = c('1', '2')))%>%
   dplyr::mutate(SES_ozer_psid = as.numeric(SES_ozer_psid))
 summary(ozer_child_psid)
+
