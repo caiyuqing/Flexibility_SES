@@ -23,7 +23,6 @@ options(scipen = 999)   # force R to output in decimal instead of scientifc noti
 options(digits=5)       # limit the number of reporting
 
 ### set directory to the folder of analytic data
-
 # Get the directory of the current R script
 curWD <- dirname(rstudioapi::getSourceEditorContext()$path)
 
@@ -45,6 +44,33 @@ load("CFPS2010.RData")
 #load("df.individual.RData")
 #load("df.community.RData")
 #load("df.family.RData")  # load dataframes: df.children, individual , community, family
+df.children[df.children == -8] <- NA
+
+# prepare the CFPS data for later analysis
+tmp <- df.children %>%
+  dplyr::mutate(role_c = "child") %>%  # indicate the role of children in his/her family
+  dplyr::full_join(., df.individual, by = c("pid", "fid")) %>% #   # merge children and individual data
+  dplyr::arrange(fid, pid) %>%
+  dplyr::group_by(fid) %>% 
+  dplyr::mutate(cid = ifelse(sum(!is.na(cid)) == 0,               # copy cid to all rows that share the same family id
+                                 NA, cid[!is.na(cid)])) %>%
+  dplyr::ungroup() %>%
+  dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with fmaily data
+  dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
+  dplyr::group_by(fid) %>%
+  dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,      # copy the father id to the rows share the smae faimliy id     
+                             NA, 
+                             pid_f[!is.na(pid_f)]),
+                pid_m = ifelse(sum(!is.na(pid_m)) == 0,     # copy the mother id to the rows share the smae faimliy id   
+                               NA, 
+                               pid_m[!is.na(pid_m)])) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(role_f = ifelse(is.na(pid_f), 
+                              NA, ifelse(pid == pid_f, 'father', NA)), # add a column to indicate father or NA
+                role_m = ifelse(is.na(pid_m), 
+                                NA, ifelse(pid == pid_m, 'mother', NA))) %>% # add a column to indicate mother  or NA
+  dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
+  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = FALSE)    # combine the role of each member as "role"
 
 # PSID
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
@@ -61,10 +87,8 @@ familysize_psid$fid <- as.numeric(as.character(familysize_psid$fid))
 #CFPS
 #select children info: fid, pid, pid of mother
 betan_child_cfps <- df.children %>%
-  dplyr::select(fid, pid, pid_m)
-#drop NA
-betan_child_cfps[betan_child_cfps == -8] <-NA
-betan_child_cfps <- drop_na(betan_child_cfps)
+  dplyr::select(fid, pid, pid_m) %>%
+  tidyr::drop_na()
 
 #select family income from family dataframe
 betan_family_cfps <- df.family %>%
@@ -76,10 +100,16 @@ names(betan_mater_cfps) <- c("pid_m", "edu_m")
 #extract children's family income and maternal education
 betan_child_cfps <- merge(betan_child_cfps, betan_family_cfps, by = "fid", all.x = TRUE)
 betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.x = TRUE)
+
+betan_tmp <- tmp %>%
+  dplyr::select(fid, pid, role, finc_per, educ) %>%  # select necessary variables,
+  dplyr::filter(role == "mother" | role == "child")  # fileter the rows that are needed.
+  # de-select data only had mother or child.
+
 #recode family income: poverty line = 1274 in 2010 (??it is not income to need line)
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
 betan_child_cfps <- betan_child_cfps %>%
-  dplyr::mutate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
+  dplyr::muate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
   dplyr::mutate(edu_m_recode = recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
                                              "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
                                              "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
