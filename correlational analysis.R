@@ -85,13 +85,21 @@ SES_mental_CFPS <- Reduce(merge_SES_CFPS, list(mental_children_cfps,SES_betan_ch
                                           SES_qiu_child_cfps,SES_kim_child_cfps,SES_hanson_child_cfps, 
                                           SES_leo_child_cfps, SES_ozer_child_cfps))
 SES_mental_CFPS <- SES_mental_CFPS[, -1] #delete pid column
-SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
-                                               "SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
-                                               "SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
-SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("SES_leo_cfps", "SES_ozer_cfps")]
+head(SES_mental_CFPS)
+colnames(SES_mental_CFPS) <- c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", #composite 1-6
+                              "i1", "i2","i3", #income 1-3
+                              #mental health
+                              "e1", "e2") #education 1-2
+SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", #composite 1-6
+                              "i1", "i2","i3")]
+                                              #"depression", "cognition", "SES_betan_cfps","SES_moog_cfps", "SES_jed_cfps",
+                                              #"SES_mcder_cfps","SES_romeo1_cfps","SES_romeo2_cfps",
+                                              #"SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
+SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
 #extract colnames of SES_mental_CFPS
 dimname <- list(colnames(SES_mental_CFPS))
 dimname #see the names
+###############
 #build a matrix for corrrelation result
 n_o <-11 #set number of ordinal variables
 n_d <-2 #set number of dichotomus
@@ -103,10 +111,48 @@ cormatrix_CFPS
 pmatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
 colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
+#ci
+##upper
+upper_ci_matrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
+colnames(upper_ci_matrix_CFPS)  <-dimname[[1]]
+upper_ci_matrix_CFPS
+##lower
+lower_ci_matrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
+colnames(lower_ci_matrix_CFPS)  <-dimname[[1]]
+lower_ci_matrix_CFPS
+
+######################################
 #calculate the spearman correlation matrix of all ordinal variables
 library("correlation")
 cor_ses_mental_cfps_ordinal <- rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
 cor_ses_mental_cfps_ordinal
+corrtest <-corr.test(SES_mental_CFPS_ordinal, y = NULL, use = "pairwise",method="spearman",adjust="holm", 
+                                     alpha=.05,ci=TRUE,minlength=5)
+round(as.matrix(corrtest$ci),digits = 3)
+corrtest_ci <-round(corrtest$ci, digits = 3)
+corrtest_ci
+corrtest_ci_upper <- corrtest_ci[, "upper"]
+corrtest_ci_upper[1:10]
+magic_for(print, silent = TRUE)
+for (i in 0:9) {
+  print(55-(1+i)*i/2)
+}
+a<-magic_result_as_vector()
+for (i in a) {
+  print(corrtest_ci_upper[])
+}
+a
+reverse(a[,2])
+dep <-corrtest_ci_upper[1:10]
+cog <-corrtest_ci_upper[11:(11+9-1)]
+c1 <-corrtest_ci_upper[19:(19+8-1)]
+
+
+summary(corrtest[, "lower"])
+cor_ses_mental_cfps_ordinal$r
+R<-cor.ci(SES_mental_CFPS_ordinal, method = "spearman", plot = FALSE)
+cor_to_ci(cor_ses_mental_cfps_ordinal$r)
+cor.plot.upperLowerCi(R)
 #insert correlation matrix into the big matrix
 #r
 cormatrix_CFPS[1:n_o, 1:n_o] <- cor_ses_mental_cfps_ordinal$r
@@ -224,14 +270,7 @@ pmatrix_CFPS #see result
 library("ggcorrplot")
 library("corrplot")
 head(cormatrix_CFPS)
-colnames(cormatrix_CFPS) <- c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", #composite 1-6
-                         "i1", "i2","i3", #income 1-3
-                          #mental health
-                         "e1", "e2") #education 1-2
-rownames(cormatrix_CFPS) <- c("dep", "cog",
-                              "c1", "c2", "c3", "c4","c5", "c6", 
-                               "i1", "i2","i3",
-                               "e1", "e2")
+
 corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "pch",sig.level = 0.05,
                cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
