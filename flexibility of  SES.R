@@ -623,7 +623,6 @@ romeo2_child_psid$edu_z <- scale(romeo2_child_psid$edu_parents)
 mean(romeo2_child_psid$edu_parents, na.rm = TRUE) # 1.8778
 sd(romeo2_child_psid$edu_parents, na.rm = TRUE)  # 1.1473
 
-romeo2_child_psid$edu_zscore
 romeo2_child_psid <- romeo2_child_psid %>%
   dplyr::mutate(edu_zscore = (edu_parents - 1.8778)/1.1473) %>%
   #calculate mean of edu and income (ses)
