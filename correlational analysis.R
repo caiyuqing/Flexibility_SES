@@ -102,6 +102,11 @@ SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c
                                               #"SES_qiu_cfps","SES_kim_cfps","SES_hanson_cfps")]
 SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
 
+#McDonald’s omega
+library("psych")
+CFPS_omega <- psych::omega(SES_mental_CFPS[,3:13])
+print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
+
 #extract colnames of SES_mental_CFPS
 
 dimname <- list(colnames(SES_mental_CFPS))
@@ -256,8 +261,8 @@ head(cormatrix_CFPS)
 
 corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "blank",sig.level = 0.05,
                cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
-cormatrix_CFPS_SES <- cormatrix_CFPS[3:11, 3:11]
-pmatrix_CFPS_SES <- pmatrix_CFPS[3:11, 3:11]
+cormatrix_CFPS_SES <- cormatrix_CFPS[3:13, 3:13]
+pmatrix_CFPS_SES <- pmatrix_CFPS[3:13, 3:13]
 corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank",sig.level = 0.05,
                               cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
@@ -288,6 +293,9 @@ summary(SES_mental_PSID)
 
 SES_mental_PSID_ordinal <- SES_mental_PSID[, c("dep", "LS","c1", "c2", "c6", "i1", "i2","i3")] 
 SES_mental_PSID_dich <- SES_mental_PSID[,c("e1", "e2")]
+#McDonald’s omega
+PSID_omega <- psych::omega(SES_mental_PSID[,3:10])
+print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
 #extract colnames of SES_mental_PSID
 dimname <- list(colnames(SES_mental_PSID))
 dimname #see the names
@@ -431,8 +439,8 @@ library("corrplot")
 cormatrix_PSID
 corrplot_PSID <-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "blank", sig.level = 0.05,
          cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
-cormatrix_PSID_SES <-cormatrix_PSID[3:8, 3:8]
-pmatrix_PSID_SES<- pmatrix_PSID[3:8, 3:8]
+cormatrix_PSID_SES <-cormatrix_PSID[3:10, 3:10]
+pmatrix_PSID_SES<- pmatrix_PSID[3:10, 3:10]
 corrplot_PSID <-corrplot.mixed(cormatrix_PSID_SES, p.mat = pmatrix_PSID_SES, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
 
