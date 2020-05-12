@@ -102,9 +102,22 @@ betan_child_cfps <- merge(betan_child_cfps, betan_family_cfps, by = "fid", all.x
 betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.x = TRUE)
 
 betan_tmp <- tmp %>%
-  dplyr::select(fid, pid, role, finc_per, educ) %>%  # select necessary variables,
-  dplyr::filter(role == "mother" | role == "child")  # fileter the rows that are needed.
-  # de-select data only had mother or child.
+  dplyr::select(fid, pid, role) %>%  # select necessary variables,
+  dplyr::filter(role == "child") %>% # fileter the rows that are needed.
+  dplyr::full_join(., tmp[tmp$role == 'mother',c('fid', 'pid', 'role', 'finc_per', 'educ')], by = 'fid') %>%
+  dplyr::rename(pid = pid.x,
+                pid_m = pid.y,) %>%
+  dplyr::filter(!is.na(educ) & !is.na(finc_per))
+
+betan_child_cfps2 <- betan_child_cfps %>%
+  dplyr::filter(!is.na(finc_per))
+
+# to find out why discrepancies happened.
+tmp2 <- betan_tmp[!(betan_tmp$pid %in% betan_child_cfps2$pid),]
+tmp3 <- betan_tmp[!(betan_tmp$fid %in% betan_child_cfps2$fid),]  # zero row, means that family id are the same
+tmp4 <- betan_tmp[(betan_tmp$fid %in% tmp2$fid), ]               # get the family whose member is missing in beta_children_cfps2
+
+# de-select data only had mother or child.
 
 #recode family income: poverty line = 1274 in 2010 (??it is not income to need line)
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
