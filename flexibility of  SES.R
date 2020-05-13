@@ -46,10 +46,21 @@ load("CFPS2010.RData")
 #load("df.family.RData")  # load dataframes: df.children, individual , community, family
 df.children[df.children == -8] <- NA
 
+# Hcp: I checked the data using fid 13021, and found that in df.children there are two individual's mother's id is empty, 
+#      which causeed the previous discrepancies between my way and your way.
+
+# > df.children[df.children$fid == 130211, c('fid', 'pid', 'pid_m')]
+# fid       pid     pid_m
+# 175 130211 130211106        NA
+# 176 130211 130211107        NA
+# 177 130211 130211112 130211104
+# 178 130211 130211113 130211104
+
 # prepare the CFPS data for later analysis
 tmp <- df.children %>%
   dplyr::mutate(role_c = "child") %>%  # indicate the role of children in his/her family
-  dplyr::full_join(., df.individual, by = c("pid", "fid")) %>% #   # merge children and individual data
+  dplyr::filter(!is.na(pid_m)) %>%     # remove the data where the mother's id is missing
+  dplyr::full_join(., df.individual, by = c("pid", "fid")) %>%    # merge children and individual data
   dplyr::arrange(fid, pid) %>%
   dplyr::group_by(fid) %>% 
   dplyr::mutate(cid = ifelse(sum(!is.na(cid)) == 0,               # copy cid to all rows that share the same family id
@@ -58,10 +69,10 @@ tmp <- df.children %>%
   dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with fmaily data
   dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
   dplyr::group_by(fid) %>%
-  dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,      # copy the father id to the rows share the smae faimliy id     
+  dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,           # copy the father id to the rows share the smae faimliy id     
                              NA, 
                              pid_f[!is.na(pid_f)]),
-                pid_m = ifelse(sum(!is.na(pid_m)) == 0,     # copy the mother id to the rows share the smae faimliy id   
+                pid_m = ifelse(sum(!is.na(pid_m)) == 0,           # copy the mother id to the rows share the smae faimliy id   
                                NA, 
                                pid_m[!is.na(pid_m)])) %>%
   dplyr::ungroup() %>%
@@ -102,6 +113,7 @@ betan_child_cfps <- merge(betan_child_cfps, betan_family_cfps, by = "fid", all.x
 betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.x = TRUE)
 
 betan_tmp <- tmp %>%
+  #dplyr::filter(!is.na(pid_m)) %>% 
   dplyr::select(fid, pid, role) %>%  # select necessary variables,
   dplyr::filter(role == "child") %>% # fileter the rows that are needed.
   dplyr::full_join(., tmp[tmp$role == 'mother',c('fid', 'pid', 'role', 'finc_per', 'educ')], by = 'fid') %>%
