@@ -45,6 +45,7 @@ load("CFPS2010.RData")
 #load("df.community.RData")
 #load("df.family.RData")  # load dataframes: df.children, individual , community, family
 df.children[df.children == -8] <- NA
+
 # Hcp: I checked the data using fid 13021, and found that in df.children there are two individual's mother's id is empty, 
 #      which causeed the previous discrepancies between my way and your way.
 
