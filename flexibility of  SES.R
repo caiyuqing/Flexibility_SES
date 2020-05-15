@@ -69,19 +69,23 @@ tmp <- df.children %>%
   dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with fmaily data
   dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
   dplyr::group_by(fid) %>%
-  dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,           # copy the father id to the rows share the smae faimliy id     
-                             NA, 
-                             pid_f[!is.na(pid_f)]),
-                pid_m = ifelse(sum(!is.na(pid_m)) == 0,           # copy the mother id to the rows share the smae faimliy id   
-                               NA, 
-                               pid_m[!is.na(pid_m)])) %>%
+  #dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,           # copy the father id to the rows share the smae faimliy id     
+  #                           NA, 
+  #                           pid_f[!is.na(pid_f)]),
+  #              pid_m = ifelse(sum(!is.na(pid_m)) == 0,           # copy the mother id to the rows share the smae faimliy id   
+  #                             NA, 
+  #                             pid_m[!is.na(pid_m)])) %>%
+  
+  dplyr::mutate(role_f = ifelse(pid %in% unique(pid_f), 
+                                'father', 
+                                NA),                     # add a column to indicate father or NA
+                role_m = ifelse(pid %in% unique(pid_m),
+                                'mother',  NA)) %>%      # add a column to indicate mother  or NA
   dplyr::ungroup() %>%
-  dplyr::mutate(role_f = ifelse(is.na(pid_f), 
-                              NA, ifelse(pid == pid_f, 'father', NA)), # add a column to indicate father or NA
-                role_m = ifelse(is.na(pid_m), 
-                                NA, ifelse(pid == pid_m, 'mother', NA))) %>% # add a column to indicate mother  or NA
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
-  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = FALSE)    # combine the role of each member as "role"
+  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE)    # combine the role of each member as "role"
+
+#tmp[tmp$fid == 130037,]
 
 # PSID
 df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
@@ -114,27 +118,43 @@ betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.
 
 betan_tmp <- tmp %>%
   #dplyr::filter(!is.na(pid_m)) %>% 
-  dplyr::select(fid, pid, role) %>%  # select necessary variables,
+  dplyr::select(fid, pid, role, pid_m) %>%  # select necessary variables,
+  
   dplyr::filter(role == "child") %>% # fileter the rows that are needed.
-  dplyr::full_join(., tmp[tmp$role == 'mother',c('fid', 'pid', 'role', 'finc_per', 'educ')], by = 'fid') %>%
-  dplyr::rename(pid = pid.x,
-                pid_m = pid.y,) %>%
-  dplyr::filter(!is.na(educ) & !is.na(finc_per))
+  dplyr::rename(pid_c = pid) %>%     # rename children'd pid as pid_c
+  dplyr::rename(pid = pid_m) %>%     # rename mother's pid_m as pid for later data merge
+  dplyr::full_join(., tmp[tmp$pid %in% .$pid, c('fid', 'pid', 'role', 'finc_per', 'educ')], by = c('fid', 'pid')) %>%
+  dplyr::rename(pid_m = pid,
+                edu_m = educ) %>%
+  
+#  dplyr::filter(!is.na(educ) & !is.na(finc_per))
+  dplyr::mutate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
+  dplyr::mutate(edu_m_recode = recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
+                                      "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
+                                      "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
+  #??technical/vocational as technical/vocational college; different system
+  #??CFPS: (1)1=Illiterate 2=Adult primary school/Literacy class 3=Ordinary primary school 4=Adult junior high school 5=Vocational junior high school 6=Ordinary junior high school 
+  #      (2)7=Ordinary specialized high school/Vocational high school/Technical high school 8=Adult senior high school 9=Specialized adult high school 10=Ordinary senior high school 
+  #      (3)11=3-year adult college (4)12=Ordinary 3-year college (5)13=4-year adult college (6)14=Ordinary 4-year college (7)15=Master’s degree 16=Doctoral degree (No such level as "some graduate")
+  dplyr::mutate(itn = as.numeric(itn),
+                edu_m_recode = as.numeric(edu_m_recode)) %>% #convert into numeric variable
+  dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)  #SES as composte of mean of itn and edu level
+  
 
-betan_child_cfps2 <- betan_child_cfps %>%
-  dplyr::filter(!is.na(finc_per))
+#betan_child_cfps2 <- betan_child_cfps %>%
+#  dplyr::filter(!is.na(finc_per))
 
 # to find out why discrepancies happened.
-tmp2 <- betan_tmp[!(betan_tmp$pid %in% betan_child_cfps2$pid),]
-tmp3 <- betan_tmp[!(betan_tmp$fid %in% betan_child_cfps2$fid),]  # zero row, means that family id are the same
-tmp4 <- betan_tmp[(betan_tmp$fid %in% tmp2$fid), ]               # get the family whose member is missing in beta_children_cfps2
+#tmp2 <- betan_tmp[!(betan_tmp$pid %in% betan_child_cfps2$pid),]
+#tmp3 <- betan_tmp[!(betan_tmp$fid %in% betan_child_cfps2$fid),]  # zero row, means that family id are the same
+#tmp4 <- betan_tmp[(betan_tmp$fid %in% tmp2$fid), ]               # get the family whose member is missing in beta_children_cfps2
 
 # de-select data only had mother or child.
 
 #recode family income: poverty line = 1274 in 2010 (??it is not income to need line)
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
 betan_child_cfps <- betan_child_cfps %>%
-  dplyr::muate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
+  dplyr::mutate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
   dplyr::mutate(edu_m_recode = recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
                                              "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
                                              "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
@@ -146,6 +166,25 @@ betan_child_cfps <- betan_child_cfps %>%
                 edu_m_recode = as.numeric(edu_m_recode)) %>% #convert into numeric variable
   dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)  #SES as composte of mean of itn and edu level
 table(betan_child_cfps$SES_betan_cfps)
+table(betan_tmp$SES_betan_cfps)
+
+# return all rows from x where there are not matching values in y, keeping just columns from x.
+tmp5 <- dplyr::anti_join(betan_tmp, betan_child_cfps) %>% 
+  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
+  dplyr::arrange(pid)
+
+tmp6 <- dplyr::anti_join(betan_child_cfps,betan_tmp)  %>% 
+  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
+  dplyr::arrange(pid)
+sum(tmp5$fid != tmp6$fid)
+sum(tmp5$pid != tmp6$pid)
+sum(tmp5$pid_m != tmp6$pid_m)
+
+# Here we got families with different pid_m, this problem will not exist if we only choose one child from one family
+# but, still, the we should some how solve the problem.
+tmp2 <- df.children[(df.children$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
+tmp7 <- df.children[df.children$fid ==  130037, c("fid", 'pid', 'pid_m')]
+tmp3 <- tmp[(tmp$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
 
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
