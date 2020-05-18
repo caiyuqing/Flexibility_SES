@@ -141,8 +141,8 @@ cormatrix_CFPS
 pmatrix_CFPS[1:n_o, 1:n_o] <- cor_ses_mental_cfps_ordinal$P
 pmatrix_CFPS<-round(pmatrix_CFPS, digits = 5)
 #ci
-round(as.matrix(corrtest$ci),digits = 6)
-
+ci_cfps <-round(as.matrix(corrtest$ci),digits = 4)
+write.csv(ci_cfps[2:19, 1:3], file = "ci_cfps1.csv")
 #########biserial correlation##########
 #?I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
 #polycor::polyserial(SES_mental_CFPS$SES_betan_cfps, SES_mental_CFPS$SES_leo_cfps, std.err = TRUE)
@@ -169,7 +169,7 @@ for (i in 1:n_o) {
 }
 e1_biserial_cortest <- magic_result_as_dataframe()  
 e1_biserial_cortest <- e1_biserial_cortest[,2]
-e1_biserial_cortest[[1]] #see result
+e1_biserial_cortest[[2]] #see result
 
 # extract p-value from cor.test result
 magic_for(print, silent = TRUE) # call magic_for()
@@ -198,7 +198,7 @@ for (i in 1:n_o) {
 }
 e2_biserial_cortest <-magic_result_as_dataframe()  
 e2_biserial_cortest<-e2_biserial_cortest[,2]
-e2_biserial_cortest #see result
+e2_biserial_cortest[[2]] #see result
 
 # extract p-value from cor.test result
 magic_for(print, silent = TRUE) # call magic_for()
@@ -326,13 +326,13 @@ pmatrix_PSID[1:n_o, 1:n_o] <- cor_ses_mental_psid_ordinal$P
 pmatrix_PSID<-round(pmatrix_PSID, digits = 5)
 pmatrix_PSID
 #ci
-cor_ses_mental_psid_ordinal$ci
-
+ci_psid<-round(cor_ses_mental_psid_ordinal$ci, digits = 3)
+write.csv(ci_psid[2:13, 1:3], file ="ci_psid1.csv")
 #########biserial correlation##########
 #?polycor::polyserial work here
 #install.packages("magicfor")
 #use magicfor to store result of for loop
-library(magicfor)               
+library(magicfor)            
 #calculate correlation between leo and other ordinal variable
 #polyserial result
 magic_for(print, silent = TRUE) # call magic_for()
@@ -447,6 +447,7 @@ corrplot_PSID <-corrplot.mixed(cormatrix_PSID_SES, p.mat = pmatrix_PSID_SES, ins
 #calculate ci between e1 and dep, e1 and LS, e1 and i2 by hand
 #formula from http://www.real-statistics.com/correlation/biserial-correlation/
 #e1 and dep
+library(psych)
 r<-polycor::polyserial(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e1)
 dep_e1<-SES_mental_PSID[,c("dep", "e1")]
 dep_e1<-drop_na(dep_e1)
@@ -461,6 +462,26 @@ r
 LS_e1<-SES_mental_PSID[,c("LS", "e1")]
 LS_e1<-drop_na(LS_e1)
 n<- 2825
+ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
+ub
+lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
+lb
+#e2 and dep
+library(psych)
+r<-polycor::polyserial(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e2)
+dep_e2<-SES_mental_PSID[,c("dep", "e2")]
+dep_e2<-drop_na(dep_e2)
+n<- count.pairwise(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e2)
+ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
+ub
+lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
+lb
+#e2 and LS
+r<-polycor::polyserial(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e2)
+r
+LS_e2<-SES_mental_PSID[,c("LS", "e2")]
+LS_e2<-drop_na(LS_e2)
+n<- pairwiseCount(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e2)
 ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
 ub
 lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
@@ -505,6 +526,17 @@ mtext("Correlation matrix PSID", side = 1, line = -1)
 par(opar)
 dev.off()
 
+table_ses_mental_cfps <- cormatrix_CFPS[3:13,1:2]
+table_ses_mental_cfps_p <-pmatrix_CFPS[3:13,1:2]
+table_ses_mental_cfps
+table_ses_mental_cfps_p
+table_ses_mental_psid <- cormatrix_PSID[3:10,1:2]
+table_ses_mental_psid_p<- pmatrix_PSID[3:10, 1:2]
+table_ses_mental_psid
+table_ses_mental_psid_p
+write
+write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
+write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
 ###########################################################
 ###################Betancourt, L, 2016:###################
 #CFPS: SES and mental health/cognition
