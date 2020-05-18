@@ -88,8 +88,7 @@ tmp <- df.children %>%
 #tmp[tmp$fid == 130037,]
 
 # PSID
-df.psid <- read.spss("PSID_SES&mental health_selected data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
-df.psid_proposal <- read.spss("selected for proposal_v1.sav", to.data.frame = TRUE, use.value.labels = TRUE)
+df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
@@ -188,18 +187,18 @@ tmp3 <- tmp[(tmp$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
 
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
-psid_child <- df.psid_proposal %>%
+psid_child <- df.psid %>%
   dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex; age
   dplyr::filter(ER34503 ==30) # Relation to the reference person is children-par
 
-psid_father <- df.psid_proposal %>% # extract rp and sp
+psid_father <- df.psid %>% # extract rp and sp
   # select Relation to the reference person, 2017 interview #, release #, personal #.
   dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
   # select relation to the reference person are: 10 - the reference person, or (|), 20-legal spouse of RP
   dplyr::filter(ER34503 == 10 | ER34503 == 20) %>% 
   dplyr::filter(ER32000 == 1) # male
 
-psid_mother <- df.psid_proposal %>% #extract rp and sp
+psid_mother <- df.psid %>% #extract rp and sp
   dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
   dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
   dplyr::filter(ER32000 == 2) #female
@@ -209,7 +208,7 @@ names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
 
 #another possible way to identify mother (?)
-#psid_mother <- df.psid_proposal %>%
+#psid_mother <- df.psid %>%
 #  dplyr::select(ER66021,ER34503,ER34501,ER30002,ER32000) %>% #children in FU; relation to RP; fid; pid; sex
 #  dplyr::filter(ER66021 != 0)  %>% #the family have children
 #  dplyr::filter(ER34503 == 10 & 20) %>% #reference person & spouse & paterner
@@ -229,7 +228,7 @@ names(betan_psid_edu) <-c("edu_year",  "fid","pid_m", "edu_m_recode")
 #recode income: poverty line = 12,060 + (familysize-1)*4180
 
 ##extract family income
-betan_psid_income <- df.psid_proposal%>%
+betan_psid_income <- df.psid%>%
   dplyr::select(ER71426, ER34501,ER30002) # total family income, fid, pid
 names(betan_psid_income) <- c("income", "fid", "pid_m")
 ##merge income and size
@@ -308,7 +307,7 @@ moog_psid_edu$edu_m_recode[moog_psid_edu$edu_m_recode == 7]<- NA
 #rename variables
 names(moog_psid_edu) <-c("edu_year",  "fid","pid_m", "edu_m_recode")
 #income recode
-moog_psid_income <- df.psid_proposal  %>%
+moog_psid_income <- df.psid  %>%
   dplyr::select(ER71426, ER34501,ER30002) #total family income, fid, pid
 names(moog_psid_income) <- c("income", "fid", "pid_m")
 moog_psid_income <- moog_psid_income%>%
@@ -394,12 +393,11 @@ yu_cfps <- yu_cfps %>%
 # reproduce Yu,2018 second young adult version first
 # subject here is rp and sp
 # import more data (education related)
-df.psid_supp_edu <- read.spss("supplement_data_education.sav", to.data.frame = TRUE, use.value.labels = TRUE)
-yu_yadult_psid_rp <- df.psid_proposal %>%
+yu_yadult_psid_rp <- df.psid %>%
   dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
   dplyr::filter(ER34503 == 10) %>%
   dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
-yu_yadult_psid_sp <- df.psid_proposal %>%
+yu_yadult_psid_sp <- df.psid %>%
   dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
   dplyr::filter(ER34503 == 20) %>%
   dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
@@ -407,10 +405,10 @@ names(yu_yadult_psid_rp)  <- c("relation_rp", "fid", "pid", "sex", "age")
 names(yu_yadult_psid_sp)  <- c("relation_rp", "fid", "pid", "sex", "age")
 
 # recode income
-yu_psid_income <- df.psid_proposal %>%
+yu_psid_income <- df.psid %>%
   dplyr::select(ER34501,ER30002, ER71426)  %>% #fid, pid, total family income
   dplyr::mutate(income_cat = cut(ER71426, 
-                                 breaks = quantile(df.psid_proposal$ER71426, probs = seq(0, 1, 1/9), na.rm= TRUE),
+                                 breaks = quantile(df.psid$ER71426, probs = seq(0, 1, 1/9), na.rm= TRUE),
                                  labels = c("1", "2", "3", "4", "5", "6", "7", "8", "9")))%>% #recode family income into 9 groups
   dplyr::mutate(income_cat = as.numeric(income_cat)) #convert into numeric variable
 names(yu_psid_income) <- c("fid", "pid", "fincome", "income_cat")
@@ -425,7 +423,7 @@ yu_psid_income <- yu_psid_income %>%
 table(yu_psid_income$ITN) #check ITN
 
 # parents' education
-yu_psid_edu <- df.psid_supp_edu %>%
+yu_psid_edu <- df.psid %>%
   dplyr::select(ER34501,ER30002,TA171981,TA171983) %>% #fid, pid, mother_edu, father_edu
   dplyr::mutate(edu_m_recode = cut(TA171981, breaks = c(-0.001, 0.5, 11.5, 12.5, 13.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6")),
                 edu_f_recode = cut(TA171983, breaks = c(-0.001, 0.5, 11.5, 12.5, 13.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6"))) %>% #cut education into 6 groups: Noe of below (1):0; < high school (2):1-10; High scool (3):11-12; associate degree (4):13-14; bachelor's degree (5):14-16; Master's degree (6)&PhD/MD (7):17
@@ -434,9 +432,9 @@ yu_psid_edu <- df.psid_supp_edu %>%
 names(yu_psid_edu) <- c("fid", "pid", "mother_edu", "father_edu", "edu_m_recode", "edu_f_recode")
 
 # sss
-yu_psid_sss_rp <- df.psid_proposal%>%
+yu_psid_sss_rp <- df.psid%>%
   dplyr::select(ER34501,ER30002,ER70879) # fid,pid, sss_rp
-yu_psid_sss_sp <- df.psid_proposal%>%
+yu_psid_sss_sp <- df.psid%>%
   dplyr::select(ER34501,ER30002,ER70741) # fid,pid, sss_sp
 names(yu_psid_sss_rp) <- c("fid", "pid", "sss")
 names(yu_psid_sss_sp) <- c("fid", "pid", "sss")
@@ -650,7 +648,7 @@ names(romeo2_mother_edu_psid) <-c("edu_year_m",  "fid","pid_m", "edu_m_recode")
 
 # family income
 # extract family income
-romeo2_psid_income <- df.psid_proposal%>%
+romeo2_psid_income <- df.psid%>%
   dplyr::select(ER71426, ER34501) #total family income, fid, pid
 names(romeo2_psid_income) <- c("income", "fid")
 
@@ -706,7 +704,7 @@ names(qiu_child_cfps) <- c("fid", "pid", "SES_qiu_cfps")
 summary(qiu_child_cfps$SES_qiu_cfps)
 
 # psid:
-qiu_income_psid <- df.psid_proposal%>%
+qiu_income_psid <- df.psid%>%
   dplyr::select(ER34501,ER30002, ER71426) #fid, pid, total family income
 names(qiu_income_psid) <- c("fid", "pid", "SES_qiu_psid")
 qiu_child_psid <- merge(psid_child, qiu_income_psid, by = c("fid", "pid"), all.x = TRUE)
@@ -738,7 +736,7 @@ familysize_psid <- df.psid %>%
   dplyr::rename(fid = ER34501,
                familysize = n)  # hcp: using this way, `fid` is 1, 2, 3.....
 
-kim_income_psid <- df.psid_proposal%>%
+kim_income_psid <- df.psid%>%
   dplyr::select(ER34501,ER30002, ER71426) %>%
   dplyr::rename(fid = ER34501,
                 pid = ER30002,
@@ -773,7 +771,7 @@ table(hanson_child_cfps$SES_hanson_cfps)
 
 # PSID
 familysize_psid
-hanson_income_psid <- df.psid_proposal%>%
+hanson_income_psid <- df.psid%>%
   dplyr::select(ER34501, ER30002, ER71426) #fid,pid, total family income
 names(hanson_income_psid) <- c("fid","pid", "fincome")
 hanson_income_psid <- merge(hanson_income_psid, familysize_psid, by = "fid", all.x = TRUE)
