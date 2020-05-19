@@ -40,15 +40,10 @@ library("foreign")
 
 #import data CFPS
 load("CFPS2010.RData")
-#load("df.children.RData")
-#load("df.individual.RData")
-#load("df.community.RData")
-#load("df.family.RData")  # load dataframes: df.children, individual , community, family
 df.children[df.children == -8] <- NA
 
 # Hcp: I checked the data using fid 13021, and found that in df.children there are two individual's mother's id is empty, 
 #      which causeed the previous discrepancies between my way and your way.
-
 # > df.children[df.children$fid == 130211, c('fid', 'pid', 'pid_m')]
 # fid       pid     pid_m
 # 175 130211 130211106        NA
@@ -69,13 +64,6 @@ tmp <- df.children %>%
   dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with fmaily data
   dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
   dplyr::group_by(fid) %>%
-  #dplyr::mutate(pid_f = ifelse(sum(!is.na(pid_f)) == 0,           # copy the father id to the rows share the smae faimliy id     
-  #                           NA, 
-  #                           pid_f[!is.na(pid_f)]),
-  #              pid_m = ifelse(sum(!is.na(pid_m)) == 0,           # copy the mother id to the rows share the smae faimliy id   
-  #                             NA, 
-  #                             pid_m[!is.na(pid_m)])) %>%
-  
   dplyr::mutate(role_f = ifelse(pid %in% unique(pid_f), 
                                 'father', 
                                 NA),                     # add a column to indicate father or NA
@@ -84,8 +72,6 @@ tmp <- df.children %>%
   dplyr::ungroup() %>%
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
   tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE)    # combine the role of each member as "role"
-
-#tmp[tmp$fid == 130037,]
 
 # PSID
 df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
@@ -118,7 +104,6 @@ betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.
 betan_tmp <- tmp %>%
   #dplyr::filter(!is.na(pid_m)) %>% 
   dplyr::select(fid, pid, role, pid_m) %>%  # select necessary variables,
-  
   dplyr::filter(role == "child") %>% # fileter the rows that are needed.
   dplyr::rename(pid_c = pid) %>%     # rename children'd pid as pid_c
   dplyr::rename(pid = pid_m) %>%     # rename mother's pid_m as pid for later data merge
@@ -168,22 +153,22 @@ table(betan_child_cfps$SES_betan_cfps)
 table(betan_tmp$SES_betan_cfps)
 
 # return all rows from x where there are not matching values in y, keeping just columns from x.
-tmp5 <- dplyr::anti_join(betan_tmp, betan_child_cfps) %>% 
-  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
-  dplyr::arrange(pid)
+#tmp5 <- dplyr::anti_join(betan_tmp, betan_child_cfps) %>% 
+#  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
+#  dplyr::arrange(pid)
 
-tmp6 <- dplyr::anti_join(betan_child_cfps,betan_tmp)  %>% 
-  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
-  dplyr::arrange(pid)
-sum(tmp5$fid != tmp6$fid)
-sum(tmp5$pid != tmp6$pid)
-sum(tmp5$pid_m != tmp6$pid_m)
+#tmp6 <- dplyr::anti_join(betan_child_cfps,betan_tmp)  %>% 
+#  dplyr::select(fid, pid, pid_m, edu_m, finc_per, SES_betan_cfps) %>%
+#  dplyr::arrange(pid)
+#sum(tmp5$fid != tmp6$fid)
+#sum(tmp5$pid != tmp6$pid)
+#sum(tmp5$pid_m != tmp6$pid_m)
 
 # Here we got families with different pid_m, this problem will not exist if we only choose one child from one family
 # but, still, the we should some how solve the problem.
-tmp2 <- df.children[(df.children$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
-tmp7 <- df.children[df.children$fid ==  130037, c("fid", 'pid', 'pid_m')]
-tmp3 <- tmp[(tmp$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
+#tmp2 <- df.children[(df.children$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
+#tmp7 <- df.children[df.children$fid ==  130037, c("fid", 'pid', 'pid_m')]
+#tmp3 <- tmp[(tmp$pid %in% tmp5$pid), c("fid", 'pid', 'pid_m')]
 
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
@@ -206,6 +191,17 @@ psid_mother <- df.psid %>% #extract rp and sp
 names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age")
 names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
+
+# tried to reproduce the psid script in full tidyverse way
+psid_tmp <- df.psid_proposal %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex; age
+  dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%
+  dplyr::mutate(role = ifelse(ER34503 ==30, 'child', 
+                                  ifelse((ER34503 ==10 | ER34503 == 20) & (ER32000 == 1), 'father',
+                                         ifelse((ER34503 == 10 | ER34503 == 20) & (ER32000 == 2), 'mother', 'other')))) %>%
+  dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
+                                   labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
+  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode))
 
 #another possible way to identify mother (?)
 #psid_mother <- df.psid %>%
@@ -264,6 +260,9 @@ betan_psid <- betan_psid %>%
 #select children
 betan_child_psid <- merge(psid_child, betan_psid,  by = "fid", all.x = TRUE) 
 table(betan_child_psid$SES_betan_psid)
+
+
+
 #########################################################################################
 #######Moog, 2008######
 #cfps
