@@ -1,4 +1,5 @@
 data/
+*.tiff
 *.csv
 *.Rproj.user
 *.Rhistory
