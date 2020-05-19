@@ -73,8 +73,14 @@ tmp <- df.children %>%
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
   tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE)    # combine the role of each member as "role"
 
-# PSID
+# PSID, N = 2526??
 df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
+
+tmp.psid <- df.psid %>%
+  dplyr::group_by(ER34501) %>%
+  dplyr::mutate(familysize = length(ER34501)) %>%   # add family size to the data
+  dplyr::ungroup() %>%
+  dplyr::select(familysize, everything())
 
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
@@ -193,15 +199,25 @@ names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
 
 # tried to reproduce the psid script in full tidyverse way
-psid_tmp <- df.psid_proposal %>%
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex; age
+tmp_betan_psid <- tmp.psid %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504, ER34548, ER71426, familysize) %>% #relation to RP; fid; pid; sex; age
   dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%
   dplyr::mutate(role = ifelse(ER34503 ==30, 'child', 
                                   ifelse((ER34503 ==10 | ER34503 == 20) & (ER32000 == 1), 'father',
                                          ifelse((ER34503 == 10 | ER34503 == 20) & (ER32000 == 2), 'mother', 'other')))) %>%
   dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
-                                   labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
-  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode))
+                                   labels = c("1", "2", "3", "4", "5", "6", NA)),
+                edu_m_recode = as.numeric(as.character(edu_m_recode)) # factor to number is a bit tricky & may cause error.
+                ) %>%
+  dplyr::rename(income = ER71426) %>%
+  dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
+  # get the interval of ITN using "ifelse"
+  dplyr::mutate(itn = ifelse(income < itn1, 1, 
+                                 ifelse(itn1 <= income & income < itn1*2, 2,
+                                         ifelse(itn1*2 <= income & income < itn1*3, 3,
+                                                ifelse(itn1*3 <= income & income < itn1*4, 4, 
+                                                       ifelse(itn1*4 <= income, 5, 0)))))) %>%
+  dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2)
 
 #another possible way to identify mother (?)
 #psid_mother <- df.psid %>%
