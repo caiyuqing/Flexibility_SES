@@ -77,8 +77,10 @@ tmp <- df.children %>%
 df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 
 tmp.psid <- df.psid %>%
-  dplyr::group_by(ER34501) %>%
-  dplyr::mutate(familysize = length(ER34501)) %>%   # add family size to the data
+  dplyr::rename(fid = ER34501,
+                pid = ER30002) %>%
+  dplyr::group_by(fid) %>%
+  dplyr::mutate(familysize = length(fid)) %>%   # add family size to the data
   dplyr::ungroup() %>%
   dplyr::select(familysize, everything())
 
@@ -200,7 +202,7 @@ names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
 
 # tried to reproduce the psid script in full tidyverse way
 tmp_betan_psid <- tmp.psid %>%
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504, ER34548, ER71426, familysize) %>% #relation to RP; fid; pid; sex; age
+  dplyr::select(ER34503,fid, pid,ER32000,ER34504, ER34548, ER71426, familysize) %>% #relation to RP; fid; pid; sex; age
   dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%
   dplyr::mutate(role = ifelse(ER34503 ==30, 'child', 
                                   ifelse((ER34503 ==10 | ER34503 == 20) & (ER32000 == 1), 'father',
@@ -217,7 +219,13 @@ tmp_betan_psid <- tmp.psid %>%
                                          ifelse(itn1*2 <= income & income < itn1*3, 3,
                                                 ifelse(itn1*3 <= income & income < itn1*4, 4, 
                                                        ifelse(itn1*4 <= income, 5, 0)))))) %>%
-  dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2)
+  dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2) %>%
+  dplyr::filter(role == "mother" | role == "child") %>%
+  dplyr::group_by(fid) %>%
+  filter(n() > 1) %>%
+  dplyr::ungroup() %>%
+  tidyr::pivot_wider(names_from = c(role), values_from = pid) %>%  # long to wide, not solved yet
+  dplyr::arrange(fid)
 
 #another possible way to identify mother (?)
 #psid_mother <- df.psid %>%
