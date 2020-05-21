@@ -31,10 +31,10 @@ setwd(curWD)
 
 # load the packages needed, if not exist, download from cran
 if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r-project.org"); require(tidyverse)}
-if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
+#if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
 if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
 library("psych")
-library("dplyr")
+#library("dplyr")
 library("tidyverse")
 library("foreign")
 
@@ -78,11 +78,19 @@ df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.l
 
 tmp.psid <- df.psid %>%
   dplyr::rename(fid = ER34501,
-                pid = ER30002) %>%
+                pid = ER30002,
+                income = ER71426,
+                edu = ER34548) %>%
   dplyr::group_by(fid) %>%
   dplyr::mutate(familysize = length(fid)) %>%   # add family size to the data
   dplyr::ungroup() %>%
-  dplyr::select(familysize, everything())
+  dplyr::mutate(role = ifelse(ER34503 ==30, 'child', 
+                              ifelse((ER34503 ==10 | ER34503 == 20) & (ER32000 == 1), 'father',
+                                     ifelse((ER34503 == 10 | ER34503 == 20) & (ER32000 == 2), 'mother', 'other'))),
+                pid_m = ifelse(role == 'mother', pid, NA),
+                pid_c = ifelse(role == 'child', pid, NA),
+                pid_f = ifelse(role == 'father', pid, NA)) %>%
+  dplyr::select(familysize, role, pid_c, pid_m, pid_f, everything())
 
 ## extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
@@ -200,18 +208,21 @@ names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age")
 names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f")
 names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m")
 
+# why the number of unique family ID from two data set differ so much?
+length(unique(psid_child$fid)) # 4421    
+length(unique(psid_mother$fid)) # 7350
+
 # tried to reproduce the psid script in full tidyverse way
 tmp_betan_psid <- tmp.psid %>%
-  dplyr::select(ER34503,fid, pid,ER32000,ER34504, ER34548, ER71426, familysize) %>% #relation to RP; fid; pid; sex; age
-  dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%
-  dplyr::mutate(role = ifelse(ER34503 ==30, 'child', 
-                                  ifelse((ER34503 ==10 | ER34503 == 20) & (ER32000 == 1), 'father',
-                                         ifelse((ER34503 == 10 | ER34503 == 20) & (ER32000 == 2), 'mother', 'other')))) %>%
-  dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
+  dplyr::filter(role == "child") %>%
+  dplyr::select(fid, pid_c, role, edu, income, familysize) %>% #relation to RP; fid; pid; sex; age
+  dplyr::full_join(., tmp.psid[!is.na(tmp.psid$pid_m), c('fid', 'pid_m')], by = c('fid')) %>%
+  #dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%  # select only with
+  dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
                                    labels = c("1", "2", "3", "4", "5", "6", NA)),
                 edu_m_recode = as.numeric(as.character(edu_m_recode)) # factor to number is a bit tricky & may cause error.
                 ) %>%
-  dplyr::rename(income = ER71426) %>%
+  #dplyr::rename(income = ER71426) %>%
   dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
   # get the interval of ITN using "ifelse"
   dplyr::mutate(itn = ifelse(income < itn1, 1, 
@@ -220,12 +231,23 @@ tmp_betan_psid <- tmp.psid %>%
                                                 ifelse(itn1*3 <= income & income < itn1*4, 4, 
                                                        ifelse(itn1*4 <= income, 5, 0)))))) %>%
   dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2) %>%
-  dplyr::filter(role == "mother" | role == "child") %>%
-  dplyr::group_by(fid) %>%
-  filter(n() > 1) %>%
-  dplyr::ungroup() %>%
-  tidyr::pivot_wider(names_from = c(role), values_from = pid) %>%  # long to wide, not solved yet
-  dplyr::arrange(fid)
+  dplyr::filter(!is.na(pid_c)) %>%
+  #dplyr::filter(role == "mother" | role == "child") %>%
+  #dplyr::group_by(fid) %>%
+  #filter(n() > 1) %>%
+  #dplyr::ungroup() %>%
+  #dplyr::mutate(pid_c = ifelse(role == 'child', pid, NA),
+  #              pid_m = ifelse(role == 'mother', pid, NA)) %>%
+  dplyr::arrange(fid) # %>%
+  
+tmp_beta_mother <- tmp_betan_psid %>%
+  dplyr::distinct(., fid, pid_m, .keep_all = TRUE)
+  
+tmp_beta_mother2 <- psid_mother %>%
+  dplyr::distinct(., fid, pid_m, .keep_all = TRUE)
+
+#tidyr::pivot_wider(names_from = c(role), values_from = pid) %>%  # long to wide, not solved yet
+  
 
 #another possible way to identify mother (?)
 #psid_mother <- df.psid %>%
@@ -241,9 +263,9 @@ betan_psid_edu <- df.psid %>%
   dplyr::select(ER34548,ER34501,ER30002) %>% #education, fid, pid
   dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
                                    labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
-  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode))
+  dplyr::mutate(edu_m_recode = as.numeric(as.character(edu_m_recode)))
                                                     #1=<high school: <12; 2=high school: 12; 3=some college/technical: 13; 4=two-years: 14; 5=4-years: 15/16; 6=some graduate/MA/Phd: 17 above; NA: 99
-betan_psid_edu$edu_m_recode[betan_psid_edu$edu_m_recode == 7]<- NA 
+#betan_psid_edu$edu_m_recode[betan_psid_edu$edu_m_recode == 7]<- NA 
 names(betan_psid_edu) <-c("edu_year",  "fid","pid_m", "edu_m_recode")
 #recode income: poverty line = 12,060 + (familysize-1)*4180
 
@@ -282,10 +304,10 @@ betan_psid <- betan_psid %>%
                 edu_m_recode = as.numeric(edu_m_recode))%>%
   dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2)
 #select children
-betan_child_psid <- merge(psid_child, betan_psid,  by = "fid", all.x = TRUE) 
+betan_child_psid <- merge(psid_child, betan_psid,  by = "fid", all.x = TRUE) ## this does really adding anything but filling NA.
+
 table(betan_child_psid$SES_betan_psid)
-
-
+table(tmp_betan_psid$SES_betan_psid)
 
 #########################################################################################
 #######Moog, 2008######
