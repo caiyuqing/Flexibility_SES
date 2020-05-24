@@ -101,7 +101,7 @@ tmp.psid <- df.psid %>%
                 pid_m = ifelse(role == 'mother', pid, NA),
                 pid_c = ifelse(role == 'child', pid, NA),
                 pid_f = ifelse(role == 'father', pid, NA)) %>%
-  dplyr::select(familysize, role, pid_c, pid_m, pid_f, everything())
+  dplyr::select(familysize, role, pid_c, pid_m, pid_f, everything()) %>%
 
 # check whether father and mother are unique in a family
 relation_father <- tmp.psid %>%
@@ -123,10 +123,48 @@ tmp.psid <- tmp.psid %>%
                 pid_f = ifelse(sum(!is.na(pid_f)) == 0, NA, pid_f[!is.na(pid_f)]))%>%
   dplyr::ungroup() 
 
+###old preparation for psid
 ### extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
 names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
 familysize_psid$fid <- as.numeric(as.character(familysize_psid$fid))
+
+psid_child <- df.psid %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504,ER34502) %>% #relation to RP; fid; pid; sex; age
+  dplyr::filter(ER34503 ==30) %>% # Relation to the reference person is children
+  dplyr::filter(ER34502 <= 20)
+
+psid_father <- df.psid %>% # extract rp and sp
+  # select Relation to the reference person, 2017 interview #, release #, personal #, sequence number
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
+  dplyr::filter(ER34502 <= 20)%>%
+  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
+  dplyr::group_by(ER34501) %>%
+  dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(ER34501) %>%
+  tidyr::drop_na(child)%>% #drop the family if there is no children in the family
+  # select relation to the reference person are: 10 - the reference person, or (|), 20-legal spouse of RP
+  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>% 
+  dplyr::filter(ER32000 == 1) # male
+
+psid_mother <- df.psid %>% #extract rp and sp
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
+  dplyr::filter(ER34502 <= 20)%>%
+  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
+  dplyr::group_by(ER34501) %>%
+  dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(ER34501)%>%
+  tidyr::drop_na(child)%>% #drop the family if there is no children in the family
+  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
+  dplyr::filter(ER32000 == 2) %>% #female
+  dplyr::filter(ER34502 <= 20)%>%
+  dplyr::filter(ER34501 != 8617 | ER34503 != 20) 
+names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age", "sequence")
+names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f","sequence", "child")
+names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m", "sequence", "child")
+
 
 #########################################################################################
 #######Betancourt, L, 2016###########
@@ -220,41 +258,6 @@ table(betan_CFPS$SES_betan_cfps)
 ###########psid#########
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
-psid_child <- df.psid %>%
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504,ER34502) %>% #relation to RP; fid; pid; sex; age
-  dplyr::filter(ER34503 ==30) %>% # Relation to the reference person is children
-  dplyr::filter(ER34502 <= 20)
-
-psid_father <- df.psid %>% # extract rp and sp
-  # select Relation to the reference person, 2017 interview #, release #, personal #, sequence number
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
-  dplyr::group_by(ER34501) %>%
-  dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(ER34501) %>%
-  tidyr::drop_na(child)%>% #drop the family if there is no children in the family
-  # select relation to the reference person are: 10 - the reference person, or (|), 20-legal spouse of RP
-  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>% 
-  dplyr::filter(ER32000 == 1) # male
-
-psid_mother <- df.psid %>% #extract rp and sp
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
-  dplyr::group_by(ER34501) %>%
-  dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(ER34501)%>%
-  tidyr::drop_na(child)%>% #drop the family if there is no children in the family
-  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
-  dplyr::filter(ER32000 == 2) %>% #female
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::filter(ER34501 != 8617 | ER34503 != 20) 
-names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age", "sequence")
-names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f","sequence", "child")
-names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m", "sequence", "child")
 
 # why the number of unique family ID from two data set differ so much?
 # CYQ: the original way extract only rp and spouse, but the couple could  have no child. I have modified the extraction
@@ -263,10 +266,31 @@ length(unique(psid_mother$fid)) # 7350-->3664 (some family may not have father/m
 
 
 # tried to reproduce the psid script in full tidyverse way
+
 tmp_betan_psid <- tmp.psid %>%
+  dplyr::mutate(age= replace(age, age ==999, NA))%>% #set NA
   dplyr::filter(role == "child") %>%
-  dplyr::select(fid, pid_c, pid_m, relation, role, income, familysize) %>% #relation to RP; fid; pid; sex; age
+  dplyr::select(fid, pid_c, pid_m, relation, role, income, familysize, age) %>% #relation to RP; fid; pid; sex; age
   dplyr::left_join(., tmp.psid[tmp.psid$role == "mother", c('pid_m', 'edu')], by = 'pid_m') %>%
+  ###FROM HERE: select one children for one family (one mother). 
+  ###RULE: (1) for families have more than one children:
+  ###      if there is children between best age (10-22) in the family, select the oldest one;
+  ###      if there is no such children in the family, still select the oldest one
+  ###      (2) for families only have one child: select the child no matter what age he/she is 
+  dplyr::group_by(fid) %>% #group by family
+  dplyr::mutate(num_child = length(pid_c)) %>% #caculate number of children in family
+  dplyr::mutate(one_child = ifelse(num_child == 1, pid_c, NA)) %>% #select the children if the family only have one children
+  dplyr::mutate(child_best = ifelse(age >=10 & age <= 22, pid_c, NA)) %>% #select children that are at the optimal age
+  dplyr::arrange(desc(age), .by_group = TRUE) %>% #arrage the children in one family according to age
+  dplyr::mutate(child_best = ifelse(row_number(child_best) ==1, pid_c, NA)) %>% #choose one children from child_best for one family
+  dplyr::mutate(no_child_best = ifelse(sum(!is.na(child_best)) == 0, pid_c, NA))%>% #select family that do not have children at the optimal age
+  dplyr::arrange(desc(age), .by_group = TRUE) %>% #arrange (same)
+  dplyr::mutate(no_child_best = ifelse(row_number(no_child_best) ==1, pid_c, NA))%>% #select one child for each family without children at the optimal age
+  dplyr::mutate(child_selected = coalesce(one_child, no_child_best, child_best)) %>% #merge 3 columns (one_child, child_best, no_child_best) together
+  dplyr::ungroup() %>%
+  #dplyr::filter(child_selected>0)%>% #check if the number of children left equals to number of mother
+  #dplyr::filter(pid_m >0)
+  ####end of select children: NA = 3654
   #dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%  # select only with
   dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
                                    labels = c("1", "2", "3", "4", "5", "6", NA)),
