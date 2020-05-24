@@ -271,6 +271,7 @@ tmp_betan_psid <- tmp.psid %>%
   dplyr::mutate(age= replace(age, age ==999, NA))%>% #set NA
   dplyr::filter(role == "child") %>%
   dplyr::select(fid, pid_c, pid_m, relation, role, income, familysize, age) %>% #relation to RP; fid; pid; sex; age
+  drop_na(pid_m) %>%
   dplyr::left_join(., tmp.psid[tmp.psid$role == "mother", c('pid_m', 'edu')], by = 'pid_m') %>%
   ###FROM HERE: select one children for one family (one mother). 
   ###RULE: (1) for families have more than one children:
@@ -288,8 +289,7 @@ tmp_betan_psid <- tmp.psid %>%
   dplyr::mutate(no_child_best = ifelse(row_number(no_child_best) ==1, pid_c, NA))%>% #select one child for each family without children at the optimal age
   dplyr::mutate(child_selected = coalesce(one_child, no_child_best, child_best)) %>% #merge 3 columns (one_child, child_best, no_child_best) together
   dplyr::ungroup() %>%
-  #dplyr::filter(child_selected>0)%>% #check if the number of children left equals to number of mother
-  #dplyr::filter(pid_m >0)
+  dplyr::filter(child_selected>0)%>% 
   ####end of select children: NA = 3654
   #dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%  # select only with
   dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
