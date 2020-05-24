@@ -65,10 +65,9 @@ CFPS <- df.children %>%
   dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
   dplyr::group_by(fid) %>%
   dplyr::mutate(role_f = ifelse(pid %in% unique(pid_f), 
-                                'father', 
-                                NA),                     # add a column to indicate father or NA
+                                'father', NA),                     # add a column to indicate father or NA
                 role_m = ifelse(pid %in% unique(pid_m),
-                                'mother',  NA)) %>%      # add a column to indicate mother  or NA
+                                'mother', NA)) %>%      # add a column to indicate mother  or NA
   dplyr::ungroup() %>%
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
   tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE) # combine the role of each member as "role"
@@ -78,27 +77,17 @@ CFPS <- df.children %>%
 df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE)
 tmp.psid <- df.psid %>%
   dplyr::rename(fid = ER34501,
-                pid = ER30002,
+                person_id = ER30002,
                 income = ER71426,
                 edu = ER34548,
                 relation = ER34503,
                 sex = ER32000,
                 age = ER34504,
                 sequence=ER34502) %>%
+  dplyr::mutate(pid = (ER30001 * 1000) + person_id) %>%##use another variable as pid (unique for every participants, the orginal one ER30002 is not (now person_id))
   dplyr::group_by(fid) %>%
   dplyr::mutate(familysize = length(fid)) %>%   # add family size to the data
-  #dplyr::filter(sequence <= 20) %>% # drop those movedout of the family
-  # hcp: sequence is not used in your oringinal approach, this may cause 210 families filtered out.
-  #      I checked one family 1170, using sequence will filter out the child (sequence: 51), and thereby 
-  #      the whole family will be removed later.
-  # > tmp.psid[tmp.psid$fid == 1170, c('fid', 'pid','relation', 'edu' , 'child', 'sequence')]
-  # A tibble: 3 x 6
-  # fid   pid relation   edu child sequence
-  # <dbl> <dbl>    <dbl> <dbl> <dbl>    <dbl>
-#    1170     6       10    15    NA        1
-#    1170    35       30     0     1       51
-#    1170   172       20    15    NA        2
-  #
+  dplyr::filter(sequence <= 20) %>% # drop those movedout of the family
   dplyr::ungroup() %>%
   dplyr::mutate(child = ifelse(relation ==30, 1, NA))%>% #decide whether there is children in the family
   dplyr::group_by(fid) %>%
@@ -132,7 +121,7 @@ tmp.psid <- tmp.psid %>%
   dplyr::group_by(fid) %>%
   dplyr::mutate(pid_m = ifelse(sum(!is.na(pid_m)) == 0, NA, pid_m[!is.na(pid_m)]),
                 pid_f = ifelse(sum(!is.na(pid_f)) == 0, NA, pid_f[!is.na(pid_f)]))%>%
-  dplyr::ungroup()
+  dplyr::ungroup() 
 
 ### extract familysize_psid
 familysize_psid <- data.frame(table(df.psid$ER34501))
@@ -170,9 +159,8 @@ betan_CFPS <- CFPS %>%
                 edu_m = educ) %>%
   
 #  dplyr::filter(!is.na(educ) & !is.na(finc_per))
-  # hcp: please add the package info of 'cut' and 'recode'
-  dplyr::mutate(itn = cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
-  dplyr::mutate(edu_m_recode = recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
+  dplyr::mutate(itn = base::cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
+  dplyr::mutate(edu_m_recode = dplyr::recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
                                       "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
                                       "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
   #??technical/vocational as technical/vocational college; different system
@@ -233,12 +221,14 @@ table(betan_CFPS$SES_betan_cfps)
 #identify mother/father/children in the data
 ##!!note that dplyr will not keep the right label for variable, change that later
 psid_child <- df.psid %>%
-  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex; age
-  dplyr::filter(ER34503 ==30) # Relation to the reference person is children-par
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504,ER34502) %>% #relation to RP; fid; pid; sex; age
+  dplyr::filter(ER34503 ==30) %>% # Relation to the reference person is children
+  dplyr::filter(ER34502 <= 20)
 
 psid_father <- df.psid %>% # extract rp and sp
   # select Relation to the reference person, 2017 interview #, release #, personal #, sequence number
-  dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
+  dplyr::filter(ER34502 <= 20)%>%
   dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
   dplyr::group_by(ER34501) %>%
   dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
@@ -250,7 +240,8 @@ psid_father <- df.psid %>% # extract rp and sp
   dplyr::filter(ER32000 == 1) # male
 
 psid_mother <- df.psid %>% #extract rp and sp
-  dplyr::select(ER34503,ER34501,ER30002,ER32000)  %>%
+  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34502)  %>%
+  dplyr::filter(ER34502 <= 20)%>%
   dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
   dplyr::group_by(ER34501) %>%
   dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
@@ -258,22 +249,24 @@ psid_mother <- df.psid %>% #extract rp and sp
   dplyr::arrange(ER34501)%>%
   tidyr::drop_na(child)%>% #drop the family if there is no children in the family
   dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
-  dplyr::filter(ER32000 == 2) #female
-
-names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age")
-names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f","child")
-names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m", "child")
+  dplyr::filter(ER32000 == 2) %>% #female
+  dplyr::filter(ER34502 <= 20)%>%
+  dplyr::filter(ER34501 != 8617 | ER34503 != 20) 
+names(psid_child) <- c("relation_rp_c", "fid", "pid", "sex", "age", "sequence")
+names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f","sequence", "child")
+names(psid_mother) <- c("relation_rp_m", "fid", "pid_m", "sex_m", "sequence", "child")
 
 # why the number of unique family ID from two data set differ so much?
 # CYQ: the original way extract only rp and spouse, but the couple could  have no child. I have modified the extraction
 length(unique(psid_child$fid)) # 4421    
-length(unique(psid_mother$fid)) # 7350-->3864 (some family may not have father/mother)
+length(unique(psid_mother$fid)) # 7350-->3664 (some family may not have father/mother)
+
 
 # tried to reproduce the psid script in full tidyverse way
 tmp_betan_psid <- tmp.psid %>%
   dplyr::filter(role == "child") %>%
-  dplyr::select(fid, pid_c, relation, role, income, familysize) %>% #relation to RP; fid; pid; sex; age
-  dplyr::left_join(., tmp.psid[, c('fid', 'pid_m','relation', 'edu')], by = c('fid', 'relation')) %>%
+  dplyr::select(fid, pid_c, pid_m, relation, role, income, familysize) %>% #relation to RP; fid; pid; sex; age
+  dplyr::left_join(., tmp.psid[tmp.psid$role == "mother", c('pid_m', 'edu')], by = 'pid_m') %>%
   #dplyr::filter(ER34503 %in% c(10, 20, 30)) %>%  # select only with
   dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
                                    labels = c("1", "2", "3", "4", "5", "6", NA)),
@@ -305,7 +298,7 @@ tmp_beta_mother <- tmp_betan_psid %>%
   
 tmp_beta_mother2 <- psid_mother %>%
   dplyr::distinct(., fid, pid_m, .keep_all = TRUE)  %>%
-  arrange(fid) #3874
+  arrange(fid) #3665?
 
 tmp8 <- dplyr::anti_join(tmp_beta_mother2, tmp_beta_mother) 
 
