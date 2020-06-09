@@ -34,16 +34,19 @@ setwd(curWD)
 
 # load the packages needed, if not exist, download from cran
 if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r-project.org"); require(tidyverse)}
-#if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
+if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
 if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
 if (!require(foreign)) {install.packages("foreign",repos = "http://cran.us.r-project.org"); require(foreign)}
 
 #import data CFPS
 load("CFPS2010.RData")
 df.children[df.children == -8] <- NA
+df.community[df.community == -8] <- NA
+df.family[df.family == -8] <- NA
+df.individual[df.individual == -8] <- NA
 
 ############# prepare the CFPS data for later analysis##########
-df.CFPS <- df.children %>%
+df.CFPS <- df.children%>%
   dplyr::mutate(role_c = "child") %>%  # indicate the role of children in his/her family
   dplyr::full_join(., df.individual, by = c("pid", "fid")) %>%    # merge children and individual data
   dplyr::arrange(fid, pid) %>%
@@ -60,14 +63,18 @@ df.CFPS <- df.children %>%
                                 'mother', NA)) %>%      # add a column to indicate mother  or NA
   dplyr::ungroup() %>%
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
-  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE) # combine the role of each member as "role"
+  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE) %>% # combine the role of each member as "role"
+  dplyr::mutate(pid_m = ifelse(role == 'child', pid_m,
+                               ifelse(role == 'mother', pid, NA)),
+                pid_f = ifelse(role == 'child', pid_f, 
+                               ifelse(role == 'father', pid, NA)),
+                pid_c = ifelse(role == 'child', pid, NA))
 
 ############# prepare the PSID data for later analysis##########
 df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.labels = TRUE) %>%
   dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% # generate a new column for unique pid for each individual.
-#tmp.psid <- df.psid %>%
   dplyr::rename(fid = ER34501,
-                income = ER71426,
+                fincome = ER71426,
                 edu = ER34548,
                 relation = ER34503,
                 sex = ER32000,
@@ -90,18 +97,6 @@ df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE, use.value.l
                 pid_f = ifelse(role == 'father', pid, NA)) %>%
   dplyr::select(familysize, role, pid_c, pid_m, pid_f, everything()) %>%
   dplyr::filter(sequence <= 20) # drop those movedout of the family
-
-# check whether father and mother are unique in a family
-#relation_father <- df.psid %>%
-#  dplyr::select(pid, pid_c,pid_m,pid_f,fid,relation, role, age,sequence, sex) %>%
-#  dplyr::filter(role == "father") 
-#relation_mother <- df.psid %>%
-#  dplyr::select(pid, pid_c,pid_m,pid_f,fid,relation, role, age,sequence, sex) %>%
-#  dplyr::filter(role == "mother") 
-#n_occur_f <- table(relation_father$fid)
-#n_occur_f[n_occur_f != 1]
-#n_occur_m <- table(relation_mother$fid)
-#n_occur_m[n_occur_m != 1]
 
 # check if there are more than 1 father in a family (without generate intermediate variables)
 df.psid %>%
@@ -138,79 +133,55 @@ df.psid <- df.psid %>%
 
 ### old preparation for psid
 ### extract familysize_psid
-familysize_psid <- data.frame(table(df.psid$ER34501))
-names(familysize_psid) <- c("fid", "familysize")  # hcp: using this way, `fid` is 1, 2, 3.....
-familysize_psid$fid <- as.numeric(as.character(familysize_psid$fid))
-
 psid_child <- df.psid %>%
-  dplyr::select(ER34503,ER34501, pid, ER32000,ER34504,ER34502) %>% #relation to RP; fid; pid; sex; age
+  dplyr::select(relation,fid, pid, sex,age,sequence, pid_m, pid_f) %>% #relation to RP; fid; pid; sex; age
   #dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% 
-  dplyr::filter(ER34503 ==30) %>% # Relation to the reference person is children
-  dplyr::filter(ER34502 <= 20)
-names(psid_child) <- c("relation_rp_c", "fid", 'pid', "sex", "age", "sequence")
+  dplyr::filter(relation ==30) %>% # Relation to the reference person is children
+  dplyr::filter(sequence <= 20)
+names(psid_child) <- c("relation_rp_c", "fid", 'pid', "sex", "age_c", "sequence","pid_m", "pid_f")
 
 psid_father <- df.psid %>% # extract rp and sp
   # select Relation to the reference person, 2017 interview #, release #, personal #, sequence number
-  dplyr::select(ER34503,ER34501,pid, ER32000,ER34502)  %>%
+  dplyr::select(relation,fid,pid, age,sequence, sex)  %>%
   #dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% 
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
-  dplyr::group_by(ER34501) %>%
+  dplyr::filter(sequence <= 20)%>%
+  dplyr::mutate(child = ifelse(relation ==30, 1, NA))%>% #decide whether there is children in the family
+  dplyr::group_by(fid) %>%
   dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
   dplyr::ungroup() %>%
-  dplyr::arrange(ER34501) %>%
+  dplyr::arrange(fid) %>%
   tidyr::drop_na(child)%>% #drop the family if there is no children in the family
   # select relation to the reference person are: 10 - the reference person, or (|), 20-legal spouse of RP
-  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>% 
-  dplyr::filter(ER32000 == 1) # male
-names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "sex_f","sequence", "child")
+  dplyr::filter(relation == 10 | relation == 20) %>% 
+  dplyr::filter(sex == 1) # male
+names(psid_father) <- c("relation_rp_f", "fid", "pid_f", "age_f","sequence",'sex_f', "child")
 
 psid_mother <- df.psid %>% #extract rp and sp
-  dplyr::select(ER34503,ER34501, pid, ER32000, ER34502)  %>%
+  dplyr::select(relation, fid, pid, age, sequence,sex)  %>%
   #dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% 
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::mutate(child = ifelse(ER34503 ==30, 1, NA))%>% #decide whether there is children in the family
-  dplyr::group_by(ER34501) %>%
+  dplyr::filter(sequence <= 20)%>%
+  dplyr::mutate(child = ifelse(relation ==30, 1, NA))%>% #decide whether there is children in the family
+  dplyr::group_by(fid) %>%
   dplyr::mutate(child = ifelse(sum(!is.na(child)) == 0, NA, "yes"))%>%
   dplyr::ungroup() %>%
-  dplyr::arrange(ER34501)%>%
+  dplyr::arrange(fid)%>%
   tidyr::drop_na(child)%>% #drop the family if there is no children in the family
-  dplyr::filter(ER34503 == 10 | ER34503 == 20) %>%
-  dplyr::filter(ER32000 == 2) %>% #female
-  dplyr::filter(ER34502 <= 20)%>%
-  dplyr::filter(ER34501 != 8617 | ER34503 != 20)  # special case
-names(psid_mother) <- c("relation_rp_m", "fid", 'pid_m', "sex_m", "sequence",  "child")
-
+  dplyr::filter(relation == 10 | relation == 20) %>%
+  dplyr::filter(sex == 2) %>% #female
+  dplyr::filter(sequence <= 20)%>%
+  dplyr::filter(fid != 8617 | relation != 20)  # special case
+names(psid_mother) <- c("relation_rp_m", "fid", 'pid_m', "age_m", "sequence","sex_m", "child")
 
 #########################################################################################
 #######Betancourt, L, 2016###########
 ##family income, maternal education
 #######CFPS#########
-##select children info: fid, pid, pid of mother
-#betan_child_cfps <- df.children %>%
-#  dplyr::select(fid, pid, pid_m) #%>%
-#  #tidyr::drop_na()
-#
-##select family income from family dataframe
-#betan_family_cfps <- df.family %>%
-#  dplyr::select(fid, finc_per)
-##select maternal education from adult dataframe
-#betan_mater_cfps <- df.individual %>%
-#  dplyr::select(pid, educ)
-#names(betan_mater_cfps) <- c("pid_m", "edu_m")
-##extract children's family income and maternal education
-#betan_child_cfps <- merge(betan_child_cfps, betan_family_cfps, by = "fid", all.x = TRUE)
-#betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.x = TRUE)
-
 betan_CFPS <- df.CFPS %>%
   #dplyr::filter(!is.na(pid_m)) %>% 
   dplyr::select(fid, pid, role, pid_m) %>%  # select necessary variables,
   dplyr::filter(role == "child") %>% # fileter the rows that are needed.
-  dplyr::rename(pid_c = pid) %>%     # rename children'd pid as pid_c
-  dplyr::rename(pid = pid_m) %>%     # rename mother's pid_m as pid for later data merge
-  dplyr::left_join(., df.CFPS[df.CFPS$pid %in% .$pid, c('fid', 'pid', 'role', 'finc_per', 'educ')], by = c('fid', 'pid')) %>%
-  dplyr::rename(pid_m = pid,
-                edu_m = educ) %>%
+  dplyr::left_join(., df.CFPS[df.CFPS$role == "mother", c('fid', 'finc_per', 'educ','pid_m')], by = c('fid', 'pid_m')) %>%
+  dplyr::rename(edu_m = educ) %>%
 #  dplyr::filter(!is.na(educ) & !is.na(finc_per))
   dplyr::mutate(itn = base::cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
   dplyr::mutate(edu_m_recode = dplyr::recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
@@ -234,7 +205,7 @@ table(betan_CFPS$SES_betan_cfps)
 tmp_betan_psid <- df.psid %>%
   dplyr::mutate(age= replace(age, age == 999, NA))%>% #set NA
   dplyr::filter(role == "child") %>%
-  dplyr::select(fid, pid_c, pid_m, relation, role, income, familysize, age) %>% #relation to RP; fid; pid; sex; age
+  dplyr::select(fid, pid_c, pid_m, relation, role, fincome, familysize, age) %>% #relation to RP; fid; pid; sex; age
   drop_na(pid_m) %>%
   dplyr::left_join(., df.psid[df.psid$role == "mother", c('pid_m', 'edu')], by = 'pid_m') %>%
   dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
@@ -243,15 +214,16 @@ tmp_betan_psid <- df.psid %>%
                 ) %>%
   dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
   # get the interval of ITN using "ifelse"
-  dplyr::mutate(itn = ifelse(income < itn1, 1, 
-                                 ifelse(itn1 <= income & income < itn1*2, 2,
-                                         ifelse(itn1*2 <= income & income < itn1*3, 3,
-                                                ifelse(itn1*3 <= income & income < itn1*4, 4, 
-                                                       ifelse(itn1*4 <= income, 5, 0)))))) %>%
+  dplyr::mutate(itn = ifelse(fincome < itn1, 1, 
+                                 ifelse(itn1 <= fincome & fincome < itn1*2, 2,
+                                         ifelse(itn1*2 <= fincome & fincome < itn1*3, 3,
+                                                ifelse(itn1*3 <= fincome & fincome < itn1*4, 4, 
+                                                       ifelse(itn1*4 <= fincome, 5, 0)))))) %>%
   dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2) %>%
   dplyr::filter(age >=10 & age <= 22) %>% # filter out children that are not youth. make things easier and closer to the paper.
   dplyr::group_by(fid) %>% # group by family
-  dplyr::sample_n(.,1) %>% # Randomly chose one row from each group
+  #dplyr::sample_n(.,1) %>% # Randomly chose one row from each group
+  dplyr::filter(row_number()==1)%>%
   dplyr::ungroup()
 
 ### FROM HERE: select one children for one family (one mother). 
@@ -273,34 +245,12 @@ tmp_betan_psid <- df.psid %>%
   #dplyr::ungroup() %>%
   #dplyr::filter(child_selected>0)%>% 
   #dplyr::arrange(fid) #%>%
-  
-tmp_beta_mother <- tmp_betan_psid %>%
-  dplyr::distinct(., fid, pid_m, .keep_all = TRUE) %>%
-  dplyr::arrange(fid) %>%
-  drop_na(pid_m) #3664
-  
-tmp_beta_mother2 <- psid_mother %>%
-  dplyr::distinct(., fid, pid_m, .keep_all = TRUE)  %>%
-  arrange(fid) #3664
 
-tmp8 <- dplyr::anti_join(tmp_beta_mother2, tmp_beta_mother) 
 
-# tidyr::pivot_wider(names_from = c(role), values_from = pid) %>%  # long to wide, not solved yet
-  
-
-#another possible way to identify mother (?)
-#psid_mother <- df.psid %>%
-#  dplyr::select(ER66021,ER34503,ER34501,ER30002,ER32000) %>% #children in FU; relation to RP; fid; pid; sex
-#  dplyr::filter(ER66021 != 0)  %>% #the family have children
-#  dplyr::filter(ER34503 == 10 & 20) %>% #reference person & spouse & paterner
-#  dplyr::filter(ER32000 == 2) #female
-#  var_labs <- attr(df.psid, "variable.labels")
-#  var_labs <- var_labs[names(psid_mother)]
-#  attr(psid_mother, "variable.labels") <- var_labs
 #recode maternal education: < high school (1); high school/GED (2); Techical/Vocational (3); som college (4); two-year degree (5); four-year degree (6); some graduate school (7); MA, PhD, Prefessional (8).
 betan_psid_edu <- df.psid %>%
-  dplyr::select(ER34548,ER34501,pid) %>% #education, fid, pid
-  dplyr::mutate(edu_m_recode = cut(ER34548, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
+  dplyr::select(edu,fid,pid) %>% #education, fid, pid
+  dplyr::mutate(edu_m_recode = cut(edu, breaks = c(-0.00001, 11.5, 12.5, 13.5, 14.5, 16.5, 98, 100), 
                                    labels = c("1", "2", "3", "4", "5", "6", NA))) %>%
   dplyr::mutate(edu_m_recode = as.numeric(as.character(edu_m_recode)))
                                                     #1=<high school: <12; 2=high school: 12; 3=some college/technical: 13; 4=two-years: 14; 5=4-years: 15/16; 6=some graduate/MA/Phd: 17 above; NA: 99
@@ -310,38 +260,38 @@ names(betan_psid_edu) <-c("edu_year",  "fid","pid_m", "edu_m_recode")
 
 ##extract family income
 betan_psid_income <- df.psid%>%
-  dplyr::select(ER71426, ER34501,pid) # total family income, fid, pid
-names(betan_psid_income) <- c("income", "fid", "pid_m")
-##merge income and size
-betan_psid_income <- merge(betan_psid_income, familysize_psid, by = "fid")
+  dplyr::select(fincome, fid,pid, familysize) # total family income, fid, pid
+names(betan_psid_income) <- c("fincome", "fid", "pid_m", "familysize")
 ##recode family income according to poverty lineand family size
 betan_psid_income <- betan_psid_income %>%
   dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% # poverty line 12060 for one people and increase 4180 for an extra person
-  dplyr::mutate(itn4 = itn1*4,
-                itn3 = itn1*3,
-                itn2 = itn1*2) %>% # 4 cut-points
-  dplyr::mutate(income_itn1 = income- itn1,
-                income_itn2 = income- itn2,
-                income_itn3 = income- itn3,
-                income_itn4 = income- itn4) %>% #compare family income with cut-points
-  dplyr::mutate(income_itn1 = cut(income_itn1, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
-                income_itn2 = cut(income_itn2, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
-                income_itn3 = cut(income_itn3, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
-                income_itn4 = cut(income_itn4, breaks = c(-Inf, 0, Inf), labels = c("0", "1"))) %>% #if income > cut-point, code as 1, else as 0
-  dplyr::mutate(income_itn1 = as.numeric(income_itn1)-1,
-                income_itn2 = as.numeric(income_itn2)-1,
-                income_itn3 = as.numeric(income_itn3)-1,
-                income_itn4 = as.numeric(income_itn4)-1)%>% #convert to numeric and minus 1 to keep 0 and 1 coding
-  dplyr::mutate(itn = income_itn1 + income_itn2 + income_itn3 + income_itn4+1) # add 4 cut-point (e.g. four 0 means below poverty line: level 1)
+  # get the interval of ITN using "ifelse"
+  dplyr::mutate(itn = ifelse(fincome < itn1, 1, 
+                             ifelse(itn1 <= fincome & fincome < itn1*2, 2,
+                                    ifelse(itn1*2 <= fincome & fincome < itn1*3, 3,
+                                           ifelse(itn1*3 <= fincome & fincome < itn1*4, 4, 
+                                                  ifelse(itn1*4 <= fincome, 5, 0))))))
+  
+ # dplyr::mutate(itn4 = itn1*4,
+ #               itn3 = itn1*3,
+ #               itn2 = itn1*2) %>% # 4 cut-points
+ # dplyr::mutate(income_itn1 = income- itn1,
+ #               income_itn2 = income- itn2,
+ #               income_itn3 = income- itn3,
+ #               income_itn4 = income- itn4) %>% #compare family income with cut-points
+ # dplyr::mutate(income_itn1 = cut(income_itn1, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
+ #               income_itn2 = cut(income_itn2, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
+ #               income_itn3 = cut(income_itn3, breaks = c(-Inf, 0, Inf), labels = c("0", "1")),
+ #               income_itn4 = cut(income_itn4, breaks = c(-Inf, 0, Inf), labels = c("0", "1"))) %>% #if income > cut-point, code as 1, else as 0
+ # dplyr::mutate(income_itn1 = as.numeric(income_itn1)-1,
+ #               income_itn2 = as.numeric(income_itn2)-1,
+ #               income_itn3 = as.numeric(income_itn3)-1,
+ #               income_itn4 = as.numeric(income_itn4)-1)%>% #convert to numeric and minus 1 to keep 0 and 1 coding
+ # dplyr::mutate(itn = income_itn1 + income_itn2 + income_itn3 + income_itn4+1) # add 4 cut-point (e.g. four 0 means below poverty line: level 1)
 
 #merge education and income
 betan_psid <- merge(psid_mother, betan_psid_edu, by = c("fid", "pid_m"), all.x = TRUE)
 betan_psid <- merge(betan_psid, betan_psid_income, by = c("fid", "pid_m"), all.x = TRUE)
-
-## hcp: meaning of the belowing code?
-edu_betan <- df.psid %>%
-  dplyr::select(ER34501, ER30002, ER34548) %>%
-  filter(ER34501 ==26)
 
 #calculate SES 
 betan_psid <- betan_psid %>%
@@ -350,13 +300,34 @@ betan_psid <- betan_psid %>%
   dplyr::mutate(SES_betan_psid = (itn + edu_m_recode)/2)
 
 # select children
-betan_child_psid <- merge(psid_child, betan_psid,  by = "fid", ) ## this does really adding anything but filling NA.
+
+betan_child_psid <- merge(psid_child, betan_psid,  by = c("fid", "pid_m")) ## this does really adding anything but filling NA.
+betan_child_psid <- betan_child_psid %>%
+  dplyr::filter(age_c >=10 & age_c <= 22) %>% # filter out children that are not youth. make things easier and closer to the paper.
+  dplyr::group_by(fid) %>% # group by family
+  dplyr::filter(row_number()==1) %>% # Randomly chose one row from each group
+  dplyr::ungroup()
 
 table(betan_child_psid$SES_betan_psid)
 table(tmp_betan_psid$SES_betan_psid) # hcp: this one is still different from the above one, right?
 summary(betan_child_psid)
 summary(tmp_betan_psid)
-
+tmp1 <- betan_child_psid[,c("SES_betan_psid", "pid", "fid")]
+names(tmp1) <- c("ses1", "pid", "fid")
+tmp2 <- tmp_betan_psid[,c("SES_betan_psid", "pid_c","fid")]
+names(tmp2) <- c("ses2", "pid", "fid")
+tmp1 <-tmp1 %>% 
+  arrange(fid)
+tmp3 <- merge(tmp1, tmp2)
+tmp3 <- tmp3 %>%
+  dplyr::mutate(diff = ses1 -ses2) %>%
+  dplyr::filter(diff != 0)
+tmp4<-betan_child_psid %>%
+  filter(fid == 8888)
+tmp5 <- tmp_betan_psid%>%
+  filter(fid == 8888)
+tmp6 <- df.psid %>%
+  filter(fid ==8888)
 #########################################################################################
 ######## Moog, et al., 2008 ######
 # sources of SES: mother's highest edu, income
