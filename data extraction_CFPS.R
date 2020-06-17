@@ -42,7 +42,7 @@ library("tidyverse")
 dfc0 <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM")
 dfa0 <- read.csv("data/2010adult.csv", header=T, fileEncoding="UTF-8-BOM") 
 dff0 <- read.csv("data/2010family.csv", header=T, fileEncoding="UTF-8-BOM")
-dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  # 
+dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  
 
 #extract related data according to SES 2010 codebook
 ##community 
@@ -89,7 +89,8 @@ df.community <- dfcom0 %>%
 
 ##adult questionnaire-individual
 df.individual <- dfa0 %>%
-  dplyr::select(pid, fid,
+  dplyr::select(pid, fid, pid_f, pid_m,
+                qa1age,
                 #education
                 edu2010_t1_best,	#Best var of highest level of education attained at 2010
                 educ,	#Level of education (detailed)
@@ -121,6 +122,7 @@ df.individual <- dfa0 %>%
                 qm402,	#Social status in local area
                 qq601, qq602,qq603,qq604,qq605,qq606,depression,#depression
                 wordtest, mathtest) #cognitive ability
+
 ###family 
 df.family <- dff0 %>%
   dplyr::select(#id
@@ -229,7 +231,8 @@ df.children <- dfc0 %>%
                 wb201,	#Child's frequency meeting parent(s) in the latest non-vacation month
                 tb6_a_f,	#Father living in the household (living with family)
                 tb6_a_m,	#Mother living in the household (living with family)
-                wz301)	#Interviewer Observation: Home environment indicates parents care about child's education)
+                wz301,
+                wa1age)	#Interviewer Observation: Home environment indicates parents care about child's education)
 
 # combine as one dataframe
 df.family_community <- merge(df.family, df.community, by = "cid", all.x = TRUE)

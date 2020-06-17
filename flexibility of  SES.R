@@ -24,7 +24,8 @@ Sys.setlocale("LC_ALL", "English")  # set local encoding to English
 Sys.setenv(LANG = "en") # set the feedback language to English
 options(scipen = 999)   # force R to output in decimal instead of scientifc notion
 options(digits=5)       # limit the number of reporting
-
+Sys.setenv('R_MAX_VSIZE'=32000000000)
+Sys.getenv('R_MAX_VSIZE')
 ### set directory to the folder of analytic data
 # Get the directory of the current R script
 curWD <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -44,18 +45,21 @@ df.children[df.children == -8] <- NA
 df.community[df.community == -8] <- NA
 df.family[df.family == -8] <- NA
 df.individual[df.individual == -8] <- NA
-
+Sys.setenv(R_MAX_VSIZE = 16e9)
+usethis::edit_r_environ("project")
 ############# prepare the CFPS data for later analysis##########
-df.CFPS <- df.children%>%
-  dplyr::mutate(role_c = "child") %>%  # indicate the role of children in his/her family
-  dplyr::full_join(., df.individual, by = c("pid", "fid")) %>%    # merge children and individual data
+#data selection for children (10-22) as the participants (objects to calculate SES)
+df.CFPS <- df.children %>%
+  dplyr::full_join(., df.individual) %>%    # merge children and individual data
   dplyr::arrange(fid, pid) %>%
   dplyr::group_by(fid) %>% 
   dplyr::mutate(cid = ifelse(sum(!is.na(cid)) == 0,               # copy cid to all rows that share the same family id
                                  NA, cid[!is.na(cid)])) %>%
   dplyr::ungroup() %>%
-  dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with fmaily data
-  dplyr::full_join(., df.community,by = "cid") %>%                # merge with community data
+  dplyr::mutate(age = ifelse(is.na(qa1age), wa1age, qa1age)) %>%  #combine age in child datafrome and adult dataframe
+  dplyr::mutate(role_c = ifelse(age <= 22 & age >= 10, "child", NA)) %>% #select 10-22 years old as child
+  dplyr::full_join(., df.family, by = c("fid", "cid")) %>%        # merge with family data
+  dplyr::full_join(., df.community, by = "cid") %>%                # merge with community data
   dplyr::group_by(fid) %>%
   dplyr::mutate(role_f = ifelse(pid %in% unique(pid_f), 
                                 'father', NA),                     # add a column to indicate father or NA
@@ -63,13 +67,29 @@ df.CFPS <- df.children%>%
                                 'mother', NA)) %>%      # add a column to indicate mother  or NA
   dplyr::ungroup() %>%
   dplyr::select(pid, fid, cid, pid_f, pid_m, role_f, role_m, role_c, everything()) %>%  # get some columns as the first few columns
-  tidyr::unite("role", role_f:role_c, na.rm = TRUE, remove = TRUE) %>% # combine the role of each member as "role"
-  dplyr::mutate(pid_m = ifelse(role == 'child', pid_m,
-                               ifelse(role == 'mother', pid, NA)),
-                pid_f = ifelse(role == 'child', pid_f, 
-                               ifelse(role == 'father', pid, NA)),
-                pid_c = ifelse(role == 'child', pid, NA)) %>%
-  dplyr::na_if(.,-8)
+  dplyr::mutate(pid_mother = ifelse(role_c == 'child', pid_m,         #pid_mother: if the person is mother, it is her pid; if the person is a child, it is her mother's pid = pid_m
+                               ifelse(role_m == 'mother', pid, NA)),  #pid_m: if the person is a child, pid_m = pid_mother; if the person is not a child, pid_m = his/her mother's pid
+                pid_father = ifelse(role_c == 'child', pid_f, 
+                               ifelse(role_f == 'father', pid, NA)), 
+                pid_child= ifelse(role_c == 'child', pid, NA)) %>% 
+  dplyr::na_if(.,-8) 
+df.CFPS_child <- df.CFPS %>%
+  #select children
+  dplyr::filter(role_c == "child") %>%
+  dplyr::group_by(fid) %>% # group by family
+  #dplyr::sample_n(.,1) %>% # Randomly chose one row from each group
+  arrange(pid) %>%
+  dplyr::filter(row_number()==1)%>%
+  dplyr::ungroup() %>%
+  dplyr::rename(educ_c = educ,
+                edu2010_t1_best_c = edu2010_t1_best) %>%
+  #select their parents, and parents SES variables (only select those will be used in the following analysis)
+  dplyr::left_join(., df.CFPS[df.CFPS$role_m == "mother", c('pid_mother', 'educ', "edu2010_t1_best")], by = 'pid_mother') %>%
+  dplyr::rename(educ_m = educ,
+                edu2010_t1_best_m = edu2010_t1_best) #%>%
+  dplyr::left_join(., df.CFPS[df.CFPS$role_f == "father", c('pid_father', 'educ', "edu2010_t1_best")], by = 'pid_father') %>%
+  dplyr::rename(educ_f = educ,
+               edu2010_t1_best_f = edu2010_t1_best) 
 
 ############# prepare the PSID data for later analysis##########
 read.spss()
@@ -98,7 +118,12 @@ df.psid <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>%
                 pid_c = ifelse(role == 'child', pid, NA),
                 pid_f = ifelse(role == 'father', pid, NA)) %>%
   dplyr::select(familysize, role, pid_c, pid_m, pid_f, everything()) %>%
-  dplyr::filter(sequence <= 20) # drop those movedout of the family
+  dplyr::filter(sequence <= 20) %>% # drop those movedout of the family
+  dplyr::filter(age >=10 & age <= 22) %>% # filter out children that are not youth. make things easier and closer to the paper.
+  dplyr::group_by(fid) %>% # group by family
+  #dplyr::sample_n(.,1) %>% # Randomly chose one row from each group
+  dplyr::filter(row_number()==1)%>%
+  dplyr::ungroup()
 
 # check if there are more than 1 father in a family (without generate intermediate variables)
 df.psid %>%
@@ -176,16 +201,56 @@ names(psid_mother) <- c("relation_rp_m", "fid", 'pid_m', "age_m", "sequence","se
 #########################################################################################
 #######Betancourt, L, 2016###########
 ##family income, maternal education
+
 #######CFPS#########
-betan_CFPS <- df.CFPS %>%
-  #dplyr::filter(!is.na(pid_m)) %>% 
-  dplyr::select(fid, pid, role, pid_m) %>%  # select necessary variables,
-  dplyr::filter(role == "child") %>% # fileter the rows that are needed.
-  dplyr::left_join(., df.CFPS[df.CFPS$role == "mother", c('fid', 'finc_per', 'educ','pid_m')], by = c('fid', 'pid_m')) %>%
-  dplyr::rename(edu_m = educ) %>%
-#  dplyr::filter(!is.na(educ) & !is.na(finc_per))
+#select children info: fid, pid, pid of mother
+##from children dataframe
+betan_child_child_cfps <- df.children %>%
+  dplyr::filter(wa1age >= 10)%>%
+  dplyr::select(fid, pid, pid_m)  #%>%
+##from adult dataframe
+betan_child_adult_cfps <- df.individual %>%
+  dplyr::filter(qa1age <= 22) %>%
+  dplyr::select(fid, pid, pid_m)
+#merge together
+betan_child_cfps <- rbind(betan_child_adult_cfps, betan_child_child_cfps)
+betan_child_cfps <- betan_child_cfps %>%
+  dplyr::group_by(fid) %>% # group by family
+  #dplyr::sample_n(.,1) %>% # Randomly chose one row from each group
+  dplyr::arrange(pid) %>%
+  dplyr::filter(row_number()==1)%>%
+  dplyr::ungroup()%>%
+  na_if(., -8)
+  
+#select family income from family dataframe
+betan_family_cfps <- df.family %>%
+  dplyr::select(fid, finc_per)
+#select maternal education from adult dataframe
+betan_mater_cfps <- df.individual %>%
+  dplyr::select(pid, educ)
+names(betan_mater_cfps) <- c("pid_m", "edu_m")
+#extract children's family income and maternal education
+betan_child_cfps <- merge(betan_child_cfps, betan_family_cfps, by = "fid", all.x = TRUE)
+betan_child_cfps <- merge(betan_child_cfps, betan_mater_cfps, by = "pid_m", all.x = TRUE)
+#composite SES
+betan_child_cfps <- betan_child_cfps %>%
   dplyr::mutate(itn = base::cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
   dplyr::mutate(edu_m_recode = dplyr::recode(edu_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
+                                             "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
+                                             "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
+  # ??technical/vocational as technical/vocational college; different system
+  # ??CFPS: (1)1=Illiterate 2=Adult primary school/Literacy class 3=Ordinary primary school 4=Adult junior high school 5=Vocational junior high school 6=Ordinary junior high school 
+  #      (2)7=Ordinary specialized high school/Vocational high school/Technical high school 8=Adult senior high school 9=Specialized adult high school 10=Ordinary senior high school 
+  #      (3)11=3-year adult college (4)12=Ordinary 3-year college (5)13=4-year adult college (6)14=Ordinary 4-year college (7)15=Master’s degree 16=Doctoral degree (No such level as "some graduate")
+  dplyr::mutate(itn = as.numeric(as.character(itn)), # convert factor into numeric variable
+                edu_m_recode = as.numeric(as.character(edu_m_recode))) %>% # edu_m_recode was already numeric after recodiing? 
+  dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)  # SES as composte of mean of itn and edu level
+table(betan_child_cfps$SES_betan_cfps)
+
+#######CFPS#########
+betan_CFPS <- df.CFPS_child%>%
+  dplyr::mutate(itn = base::cut(finc_per, breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), labels = c("1", "2", "3", "4", "5"))) %>% #set 5 level of itn according to poverty line (4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
+  dplyr::mutate(edu_m_recode = dplyr::recode(educ_m, "1" = 1, "2" = 1, "3" = 1, "4" = 1, "5" = 1, "6" = 1, 
                                       "7" = 2, "8" = 2, "9" = 2, "10" = 2, 
                                       "11" = 3,"12" = 4,"13" = 5, "14" = 6, "15" = 7,"16" = 7)) %>%  
   # ??technical/vocational as technical/vocational college; different system
@@ -194,12 +259,7 @@ betan_CFPS <- df.CFPS %>%
   #      (3)11=3-year adult college (4)12=Ordinary 3-year college (5)13=4-year adult college (6)14=Ordinary 4-year college (7)15=Master’s degree 16=Doctoral degree (No such level as "some graduate")
   dplyr::mutate(itn = as.numeric(as.character(itn)), # convert factor into numeric variable
                 edu_m_recode = as.numeric(as.character(edu_m_recode))) %>% # edu_m_recode was already numeric after recodiing? 
-  dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)%>%  # SES as composte of mean of itn and edu level
-  dplyr::group_by(fid) %>%
-  dplyr::arrange(pid) %>%
-  dplyr::filter(row_number()==1)%>%
-  dplyr::ungroup()
-  
+  dplyr::mutate(SES_betan_cfps = (itn + edu_m_recode)/2)  # SES as composte of mean of itn and edu level
 table(betan_CFPS$SES_betan_cfps)
 
 ########### psid #########
