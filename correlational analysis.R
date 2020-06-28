@@ -1,4 +1,11 @@
-library(tidyverse)
+# load the packages needed, if not exist, download from cran
+if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r-project.org"); require(tidyverse)}
+if (!require(ggcorrplot)) {install.packages("ggcorrplot",repos = "http://cran.us.r-project.org"); require(ggcorrplot)}
+if (!require(corrplot)) {install.packages("corrplot",repos = "http://cran.us.r-project.org"); require(corrplot)}
+if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
+if (!require(correlation)) {install.packages("correlation",repos = "http://cran.us.r-project.org"); require(correlation)}
+if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org"); require(ltm)}
+if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
 
 #################################mental health###################
 # Mental health and cognition CPFS
@@ -120,7 +127,7 @@ SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c
 SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
 
 #McDonald’s omega
-library("psych")
+# library("psych")
 CFPS_omega <- psych::omega(SES_mental_CFPS[,3:13])
 print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
 
@@ -128,12 +135,12 @@ print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
 dimname <- list(colnames(SES_mental_CFPS))
 dimname #see the names
 ###############
-#build a matrix for corrrelation result
+#build a matrix for correlation result
 n_o <-11 #set number of ordinal variables
-n_d <-2 #set number of dichotomus
+n_d <-2 #set number of dichotomous
 #r
 cormatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
-colnames(cormatrix_CFPS) <- dimname[[1]] #rename the matix
+colnames(cormatrix_CFPS) <- dimname[[1]] #rename the matrix
 cormatrix_CFPS
 #p
 pmatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
@@ -141,11 +148,12 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 
 ######################################
-#calculate the spearman correlation matrix of all ordinal variables
-library("correlation")
+# calculate the Spearman correlation matrix of all ordinal variables
+# library("correlation")
 cor_ses_mental_cfps_ordinal <- Hmisc::rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
 cor_ses_mental_cfps_ordinal
-library("psych")
+
+# library("psych")
 corrtest <-corr.test(SES_mental_CFPS_ordinal, y = NULL, use = "pairwise",method="spearman",adjust="holm", 
                                      alpha=.05,ci=TRUE,minlength=5)
 
@@ -159,16 +167,15 @@ pmatrix_CFPS<-round(pmatrix_CFPS, digits = 5)
 #ci
 ci_cfps <-round(as.matrix(corrtest$ci),digits = 4)
 write.csv(ci_cfps[2:19, 1:3], file = "ci_cfps1.csv")
-#########biserial correlation##########
-#?I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
-#polycor::polyserial(SES_mental_CFPS$c1, SES_mental_CFPS$e1, std.err = TRUE)
-#so I use ltm::biserial.cor instead
-library("ltm")
-#install.packages("magicfor")
-#use magicfor to store result of for loop
-library(magicfor)               
-#calculate correlation between leo and other ordinal variable
-#r
+
+######### biserial correlation ##########
+# Yuqing: I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
+#         polycor::polyserial(SES_mental_CFPS$c1, SES_mental_CFPS$e1, std.err = TRUE)
+#         so I use ltm::biserial.cor instead
+# use magicfor to store result of for loop
+# library(magicfor)               
+# calculate correlation between leo and other ordinal variable
+# r
 magic_for(print, silent = TRUE) # call magic_for()
 for (i in 1:n_o) {
   print(biserial.cor(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS$e1, use = "complete.obs", level = 2))
@@ -196,6 +203,7 @@ e1_biserial_p <- magic_result_as_dataframe()
 e1_biserial_p <- e1_biserial_p[,2]
 e1_biserial_p<-round(e1_biserial_p, digits = 5) #see result
 e1_biserial_p
+
 # calculate correlation between ozer and other ordinal variable
 # r
 magic_for(print, silent = TRUE) # call magic_for()
@@ -269,24 +277,17 @@ pmatrix_CFPS[(n_o +1),(n_o +2)] <- phi_e1_e2_p
 pmatrix_CFPS[(n_o +2),(n_o +1)] <- phi_e1_e2_p
 pmatrix_CFPS #see result
 
-# install.packages("ggcorrplot")
-library("ggcorrplot")
-library("corrplot")
 head(cormatrix_CFPS)
 
 corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "blank",sig.level = 0.05,
                cl.lim = c(-0.111, 1), tl.cex = 0.8, number.cex = 0.8)
 cormatrix_CFPS_SES <- cormatrix_CFPS[3:13, 3:13]
 pmatrix_CFPS_SES <- pmatrix_CFPS[3:13, 3:13]
-corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank",sig.level = 0.05,
+corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
-##install.packages("PerformanceAnalytics")
-#library(PerformanceAnalytics)
-#chart.Correlation(SES_mental_CFPS, histogram=TRUE, density = TRUE, method = "spearman")
-
 ##################################### psid matrix##########################################
-#merge all SES PSID and mental health
+# merge all SES PSID and mental health
 SES_mental_PSID <- Reduce(merge_SES, list(mental_psid, SES_betan_child_psid, SES_moog_child_psid, SES_romeo2_child_psid,
                                          SES_qiu_child_psid, SES_kim_child_psid, SES_hanson_child_psid, 
                                          SES_leo_child_psid, SES_ozer_child_psid)) %>%
@@ -304,8 +305,10 @@ SES_mental_PSID <- Reduce(merge_SES, list(mental_psid, SES_betan_child_psid, SES
 
 SES_mental_PSID_ordinal <- SES_mental_PSID[, c("dep", "LS","c1", "c2", "c6", "i1", "i2","i3")] 
 SES_mental_PSID_dich <- SES_mental_PSID[,c("e1", "e2")]
-#McDonald’s omega
+
+# McDonald’s omega
 PSID_omega <- psych::omega(SES_mental_PSID[,3:10])
+
 print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
 #extract colnames of SES_mental_PSID
 dimname <- list(colnames(SES_mental_PSID))
