@@ -12,7 +12,6 @@
 #   To be consistent across the index reproduced, for all children and adolescents' SES, 
 #   We used data from participant with age ranged 10-22 yrs-old.
 #
-
 ######################## Start of the script ###########################
 ### clean the memory to avoid unnecessary errors:
 rm(list = ls())
@@ -296,7 +295,7 @@ table(moog_PSID$SES_moog_psid)
 # Note: we reversed from the original so that ....
 # Note: only reproduced using CFPS data because occupation data is not available from PSID
 
-#########CFPS##########
+######### CFPS ##########
 jed_CFPS <- df.CFPS_child %>%
   dplyr::mutate(occup_ses = recode(egp_m, "1"= 7, "2"=6, "3"=5,  "7"= 5, "4"=4, "5"= 4, "6"= 4, "8"= 3, "9"=2, "10"=1, "11"=1, "-8"=-8,"80000"= 8, .default = -8)) %>%
   dplyr::na_if(.,-8) %>% #set NA

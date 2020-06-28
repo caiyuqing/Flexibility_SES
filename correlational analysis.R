@@ -135,12 +135,12 @@ print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
 dimname <- list(colnames(SES_mental_CFPS))
 dimname #see the names
 ###############
-#build a matrix for corrrelation result
+#build a matrix for correlation result
 n_o <-11 #set number of ordinal variables
-n_d <-2 #set number of dichotomus
+n_d <-2 #set number of dichotomous
 #r
 cormatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
-colnames(cormatrix_CFPS) <- dimname[[1]] #rename the matix
+colnames(cormatrix_CFPS) <- dimname[[1]] #rename the matrix
 cormatrix_CFPS
 #p
 pmatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
@@ -148,10 +148,11 @@ colnames(pmatrix_CFPS)  <-dimname[[1]]
 pmatrix_CFPS
 
 ######################################
-# calculate the spearman correlation matrix of all ordinal variables
+# calculate the Spearman correlation matrix of all ordinal variables
 # library("correlation")
 cor_ses_mental_cfps_ordinal <- Hmisc::rcorr(as.matrix(SES_mental_CFPS_ordinal), type = "spearman")
 cor_ses_mental_cfps_ordinal
+
 # library("psych")
 corrtest <-corr.test(SES_mental_CFPS_ordinal, y = NULL, use = "pairwise",method="spearman",adjust="holm", 
                                      alpha=.05,ci=TRUE,minlength=5)
@@ -282,11 +283,11 @@ corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "bla
                cl.lim = c(-0.111, 1), tl.cex = 0.8, number.cex = 0.8)
 cormatrix_CFPS_SES <- cormatrix_CFPS[3:13, 3:13]
 pmatrix_CFPS_SES <- pmatrix_CFPS[3:13, 3:13]
-corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank",sig.level = 0.05,
+corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ##################################### psid matrix##########################################
-#merge all SES PSID and mental health
+# merge all SES PSID and mental health
 SES_mental_PSID <- Reduce(merge_SES, list(mental_psid, SES_betan_child_psid, SES_moog_child_psid, SES_romeo2_child_psid,
                                          SES_qiu_child_psid, SES_kim_child_psid, SES_hanson_child_psid, 
                                          SES_leo_child_psid, SES_ozer_child_psid)) %>%
@@ -304,8 +305,10 @@ SES_mental_PSID <- Reduce(merge_SES, list(mental_psid, SES_betan_child_psid, SES
 
 SES_mental_PSID_ordinal <- SES_mental_PSID[, c("dep", "LS","c1", "c2", "c6", "i1", "i2","i3")] 
 SES_mental_PSID_dich <- SES_mental_PSID[,c("e1", "e2")]
-#McDonald’s omega
+
+# McDonald’s omega
 PSID_omega <- psych::omega(SES_mental_PSID[,3:10])
+
 print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
 #extract colnames of SES_mental_PSID
 dimname <- list(colnames(SES_mental_PSID))
