@@ -125,24 +125,19 @@ for(i in 1:10){
   print(storage.vector)
 }
 storage.vector
-for (i in 1:13) {
-  v1<- rep(dimname[i], 13)
-  print(v1)
-}
+
+
+
 #build a matrix for correlation result
-Correlations <- data.frame(variable1 = character(length=169), 
-                           variable2 = character(length=169), 
-                           correlation=numeric(length=169), 
-                           stringsAsFactors=F) 
-v1<-for (i in 1:13) {
-  Correlations <- dimname[i]
-  print(Correlations)
-}
-v1
-v2<-for (i in 1:13) {
-  Correlations <- dimname[i]
-  print(Correlations)
-}
+Correlations <- as.data.frame(matrix(ncol = 4, nrow = 169)) %>%
+  dplyr::rename(variable1 = V1, variable2 =V2, correlation =V3, p-value = V4) %>%
+  dplyr::mutate(variable1 = rep(dimname, each = 13))
+Correlations <- data.frame(variable1 = rep(dimname, each = 13),
+                           variable2 = rep(dimname, 13),
+                           correlation = rep(NA, 169),
+                           p = rep(NA, 169)) %>%
+  dplyr::mutate(correlation = SES_mental_CFPS$)
+
 Correlations[1:13] <- dimname[1]
 Correlations[1:26] <- dimname[2]
 x<-cor.test(SES_mental_CFPS[,1], SES_mental_CFPS[,1])
