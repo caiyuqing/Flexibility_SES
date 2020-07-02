@@ -484,5 +484,9 @@ ozer_PSID <- df.PSID_child %>%
   dplyr::mutate(SES_ozer_psid = cut(edu_parents, breaks = c(0, median(edu_parents, na.rm = 10), 100), labels = c('1', '2')))%>%
   dplyr::mutate(SES_ozer_psid = as.numeric(as.character(SES_ozer_psid))) 
 table(ozer_PSID$SES_ozer_psid)
-  
 
+# Save data
+# save SES score reproduced from CFPS
+
+
+# save SES score reproduced from PSID

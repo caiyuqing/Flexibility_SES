@@ -10,19 +10,18 @@ if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.
 if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
 if (!require(lessR)) {install.packages("spearmanCI",repos = "http://cran.us.r-project.org"); require(lessR)}
 
-##################CFPS######################
-#mental health
+################## CFPS ######################
 # Mental health and cognition CPFS
 # children
 mental_CFPS <- df.CFPS_child %>%   
-  dplyr::select(#from child dataframe
+  dplyr::select(# from child dataframe
                 wn401,	# Feel depressed and cannot cheer up
                 wn402,	# Feel nervous
                 wn403,	# Feel agitated or upset and cannot remain calm 
                 wn404,	# Feel hopeless about the future 
                 wn405,	# Feel that everything is difficult 
                 wn406,	# Think life is meaningless 
-                #from adult dataframe
+                # from adult dataframe
                 qq601,  # Feel depressed and cannot cheer up
                 qq602,  # Feel nervous
                 qq603,  # Feel agitated or upset and cannot remain calm
@@ -50,11 +49,11 @@ names_dataframe_cfps <- list(betan_CFPS, moog_CFPS,
                           romeo1_CFPS, romeo2_CFPS, qiu_CFPS, kim_CFPS, 
                           hanson_CFPS, leo_CFPS, ozer_CFPS)
 names_paper_cfps <- c("betan", "moog","jed", "mcder",
-                 "romeo1", "romeo2", "qiu", "kim", 
-                 "hanson", "leo", "ozer")
+                      "romeo1", "romeo2", "qiu", "kim", 
+                      "hanson", "leo", "ozer")
 
 # extract columns of pid and SES from all the dataframes of SES
-N_SES_CFPS <- 11
+N_SES_CFPS <- length(names_paper_cfps)
 dataframes_cfps <- replicate(N_SES_CFPS, data.frame())
 
 for (i in 1:N_SES_CFPS) {
@@ -112,6 +111,7 @@ for (i in 1:N_correlation) {
    v2 <- Correlations_cfps[i, "variable2"]
    # if both variables are ordinal, use spearsman
    if(v1 %in% colnames(SES_mental_CFPS_ordinal) && v2 %in% colnames(SES_mental_CFPS_ordinal)){
+     
      a <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], method = "spearman", exact = FALSE)
      Correlations_cfps[i, "correlation"]<- a$estimate
      Correlations_cfps[i, "p"] <- round(a$p.value, digits = 5)
@@ -119,6 +119,7 @@ for (i in 1:N_correlation) {
      Correlations_cfps[i, "ci2"] <- NA
      # if both variables are dichonomous, use phi analysis
      } else if (!(v1 %in% colnames(SES_mental_CFPS_ordinal)) && !(v2 %in% colnames(SES_mental_CFPS_ordinal))){
+       
        Correlations_cfps[i, "correlation"] <- phi(table(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2]))
        b <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs")                                       
        Correlations_cfps[i, "p"]<- round(b$p.value, digits = 5)
@@ -126,6 +127,7 @@ for (i in 1:N_correlation) {
        Correlations_cfps[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
        # if one variable is dichonomous and another is ordinal, use biserial correlation (first variable is dichotomous)
        } else if (v1 %in% colnames(SES_mental_CFPS_dicho) && !(v2 %in% colnames(SES_mental_CFPS_dicho))){
+         
          Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v2], SES_mental_CFPS[,v1], use = "complete.obs", level = 2)
          c<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
          Correlations_cfps[i, "p"]<- c$p.value
@@ -133,6 +135,7 @@ for (i in 1:N_correlation) {
          Correlations_cfps[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
          # same here, when second variable is dichonomous
          } else if (!(v1 %in% colnames(SES_mental_CFPS_dicho)) && v2 %in% colnames(SES_mental_CFPS_dicho)){
+           
            Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
            d<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
            Correlations_cfps[i, "p"]<- d$p.value
