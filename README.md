@@ -19,6 +19,7 @@ We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.
 * `Correlation_analyses.R`
 
 #### Correlation between SES scores
+### Assessing the variability in effect size resulted from variability in SES measurement
 * All the SES scores are positively correlated but the strength vary from R = 0.17 to R = 0.99 (CFPS); R = 0.43 to R = 0.95
 
 #### Omega
@@ -26,4 +27,3 @@ We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.
 
 * PSID: The McDonald's omega all eight SES scores were (hieratical) and (total). 
 
-### Assessing the variability in effect size resulted from variability in SES measurement

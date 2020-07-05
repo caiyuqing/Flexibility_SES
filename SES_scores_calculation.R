@@ -83,7 +83,7 @@ df.CFPS_child <- df.CFPS %>%
   dplyr::rename(educ_f = educ,
                edu2010_t1_best_f = edu2010_t1_best,
                egp_f = qg307egp) 
-
+save(df.CFPS_child, file = "df.CFPS_child.RData")
 ############# prepare the PSID data for later analysis##########
 # Load the data about family structure.
 df.map_psid <- read.spss("GID_map_psid.sav", to.data.frame = TRUE) %>%
@@ -130,6 +130,7 @@ df.PSID_child <- df.PSID %>%
   arrange(pid) %>%
   dplyr::filter(row_number()==1)%>%
   dplyr::ungroup()
+save(df.PSID_child, file = "df.PSID_child.RData")
 
 ##################### Reproduce SES indexes in papers ###################################################################
 ####### Betancourt, L, 2016###########
@@ -505,29 +506,8 @@ for (i in 1:N_SES_CFPS) {
   print(dataframes_cfps)
 }
 dataframes_cfps
+save(dataframes_cfps, file = 'SES_CFPS.RData')
 
-## correlation CFPS
-# merge all ordinal and continuous SES cfps and mental health 
-SES_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>%
-  dplyr::left_join(., mental_CFPS, by = "pid") %>%
-  dplyr::select(-pid) %>%
-  dplyr::rename(dep = depression,
-                cog = cognition,
-                #composite SES 1-6
-                c1 = SES_betan_cfps,
-                c2 = SES_moog_cfps, 
-                c3 = SES_jed_cfps, 
-                c4 = SES_mcder_cfps,
-                c5 = SES_romeo1_cfps,
-                c6 = SES_romeo2_cfps,
-                #income 1-3
-                i1 = SES_qiu_cfps,
-                i2 = SES_kim_cfps,
-                i3 = SES_hanson_cfps,
-                #education 1-2
-                e1 = SES_leo_cfps,
-                e2 = SES_ozer_cfps)
-save(SES_mental_CFPS, file = 'SES_CFPS.RData')
 # save SES score reproduced from PSID
 # extract data 
 names_dataframe_psid <- list(betan_PSID, moog_PSID,
@@ -544,23 +524,4 @@ for (i in 1:N_SES_PSID) {
   print(dataframes_psid)
 }
 dataframes_psid
-
-## correlation psid
-# merge all ordinal and continuous SES cfps and mental health 
-SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_psid) %>%
-  dplyr::select(-pid) %>%
-  dplyr::rename(dep = depression,
-                satis = life_satisfaction,
-                #composite SES 1-6
-                c1 = SES_betan_psid,
-                c2 = SES_moog_psid, 
-                c6 = SES_romeo2_psid,
-                #income 1-3
-                i1 = SES_qiu_psid,
-                i2 = SES_kim_psid,
-                i3 = SES_hanson_psid,
-                #education 1-2
-                e1 = SES_leo_psid,
-                e2 = SES_ozer_psid)   
-save(SES_mental_PSID, file = 'SES_PSID.RData')
-
+save(dataframes_psid, file = "SES_PSID.RData")

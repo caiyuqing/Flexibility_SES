@@ -10,19 +10,19 @@ if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.
 if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
 if (!require(lessR)) {install.packages("spearmanCI",repos = "http://cran.us.r-project.org"); require(lessR)}
 
-################## CFPS ######################
+##################CFPS######################
+#mental health
 # Mental health and cognition CPFS
 # children
-load("df.CFPS_child.RData")
 mental_CFPS <- df.CFPS_child %>%   
-  dplyr::select(# from child dataframe
+  dplyr::select(#from child dataframe
                 wn401,	# Feel depressed and cannot cheer up
                 wn402,	# Feel nervous
                 wn403,	# Feel agitated or upset and cannot remain calm 
                 wn404,	# Feel hopeless about the future 
                 wn405,	# Feel that everything is difficult 
                 wn406,	# Think life is meaningless 
-                # from adult dataframe
+                #from adult dataframe
                 qq601,  # Feel depressed and cannot cheer up
                 qq602,  # Feel nervous
                 qq603,  # Feel agitated or upset and cannot remain calm
@@ -44,12 +44,29 @@ mental_CFPS <- df.CFPS_child %>%
   dplyr::mutate(depression = ifelse(depression <0, NA, depression))%>%
   tidyr::drop_na()
 
-# import SES data
-load("SES_CFPS.RData")
+# extract data from each dataframe  
+names_dataframe_cfps <- list(betan_CFPS, moog_CFPS,
+                          jed_CFPS, mcder_CFPS,
+                          romeo1_CFPS, romeo2_CFPS, qiu_CFPS, kim_CFPS, 
+                          hanson_CFPS, leo_CFPS, ozer_CFPS)
+names_paper_cfps <- c("betan", "moog","jed", "mcder",
+                 "romeo1", "romeo2", "qiu", "kim", 
+                 "hanson", "leo", "ozer")
+
+# extract columns of pid and SES from all the dataframes of SES
+N_SES_CFPS <- 11
+dataframes_cfps <- replicate(N_SES_CFPS, data.frame())
+
+for (i in 1:N_SES_CFPS) {
+  dataframes_cfps[[i]] <- names_dataframe_cfps[[i]][, c("pid", paste0("SES_", names_paper_cfps[i], "_cfps"))]
+  print(dataframes_cfps)
+}
+dataframes_cfps
+
 ## correlation CFPS
 # merge all ordinal and continuous SES cfps and mental health 
 SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>%
-  dplyr::left_join(., mental_CFPS, by = "pid", all.x = TRUE) %>%
+  dplyr::left_join(., mental_CFPS, by = "pid") %>%
   dplyr::select(-pid) %>%
   dplyr::rename(dep = depression,
                 cog = cognition,
@@ -66,8 +83,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
                 i3 = SES_hanson_cfps,
                 #education 1-2
                 e1 = SES_leo_cfps,
-                e2 = SES_ozer_cfps)
-
+                e2 = SES_ozer_cfps)        
 
 #select ordinal variables                             
 SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", "i1", "i2","i3")]
@@ -77,6 +93,12 @@ SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
 #McDonald’s omega
 CFPS_omega <- psych::omega(SES_mental_CFPS[, 3:(N_SES_CFPS+2)])
 print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
+#ICC
+install.packages("irr")
+library(irr)
+CFPS_ICC <- irr::icc(SES_mental_CFPS[, 3:(N_SES_CFPS+2)], model = "oneway", 
+                     type = "agreement")
+CFPS_ICC
 
 # extract colnames of SES_mental_CFPS
 dimname <- colnames(SES_mental_CFPS)
@@ -96,7 +118,6 @@ for (i in 1:N_correlation) {
    v2 <- Correlations_cfps[i, "variable2"]
    # if both variables are ordinal, use spearsman
    if(v1 %in% colnames(SES_mental_CFPS_ordinal) && v2 %in% colnames(SES_mental_CFPS_ordinal)){
-     
      a <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], method = "spearman", exact = FALSE)
      Correlations_cfps[i, "correlation"]<- a$estimate
      Correlations_cfps[i, "p"] <- round(a$p.value, digits = 5)
@@ -104,7 +125,6 @@ for (i in 1:N_correlation) {
      Correlations_cfps[i, "ci2"] <- NA
      # if both variables are dichonomous, use phi analysis
      } else if (!(v1 %in% colnames(SES_mental_CFPS_ordinal)) && !(v2 %in% colnames(SES_mental_CFPS_ordinal))){
-       
        Correlations_cfps[i, "correlation"] <- phi(table(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2]))
        b <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs")                                       
        Correlations_cfps[i, "p"]<- round(b$p.value, digits = 5)
@@ -112,7 +132,6 @@ for (i in 1:N_correlation) {
        Correlations_cfps[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
        # if one variable is dichonomous and another is ordinal, use biserial correlation (first variable is dichotomous)
        } else if (v1 %in% colnames(SES_mental_CFPS_dicho) && !(v2 %in% colnames(SES_mental_CFPS_dicho))){
-         
          Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v2], SES_mental_CFPS[,v1], use = "complete.obs", level = 2)
          c<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
          Correlations_cfps[i, "p"]<- c$p.value
@@ -120,7 +139,6 @@ for (i in 1:N_correlation) {
          Correlations_cfps[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
          # same here, when second variable is dichonomous
          } else if (!(v1 %in% colnames(SES_mental_CFPS_dicho)) && v2 %in% colnames(SES_mental_CFPS_dicho)){
-           
            Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
            d<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
            Correlations_cfps[i, "p"]<- d$p.value
@@ -329,7 +347,6 @@ corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insi
 
 ##################################### psid matrix##########################################
 # Mental health and cognition PSID
-load("df.PSID_child.RData")
 mental_PSID <- df.PSID_child %>%
   dplyr::select(depression, #sum for depression: very healthy 0----24 very depressed
                 life_satisfaction, #life satisfaction: completed satisfied 1----5 not at all satisfied
@@ -339,15 +356,26 @@ mental_PSID <- df.PSID_child %>%
   # reverse score for depresion and life_satisfaction (higher-better mental health)
   dplyr::mutate(depression = -depression + 24,
                 life_satisfaction = -life_satisfaction + 6) 
+# extract data 
+names_dataframe_psid <- list(betan_PSID, moog_PSID,
+                             romeo2_PSID, qiu_PSID, kim_PSID, 
+                             hanson_PSID, leo_PSID, ozer_PSID)
+names_paper_psid <- c("betan", "moog", "romeo2", "qiu", "kim", 
+                      "hanson", "leo", "ozer")
+# extract columns of pid and SES from all the dataframes of SES
+N_SES_PSID <- 8
+dataframes_psid <- replicate(N_SES_PSID, data.frame())
 
-# load SES data
-load("SES_PSID.RData")
+for (i in 1:N_SES_PSID) {
+  dataframes_psid[[i]] <- names_dataframe_psid[[i]][, c("pid", paste0("SES_", names_paper_psid[i], "_psid"))]
+  print(dataframes_psid)
+}
+dataframes_psid
 
 ## correlation psid
-
-# merge all ordinal and continuous SES cfps and mental health
+# merge all ordinal and continuous SES cfps and mental health 
 SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_psid) %>%
-  dplyr::left_join(., mental_PSID, by = "pid", all.x = TRUE) %>%
+  dplyr::left_join(., mental_PSID, by = "pid") %>%
   dplyr::select(-pid) %>%
   dplyr::rename(dep = depression,
                 satis = life_satisfaction,
@@ -361,10 +389,8 @@ SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
                 i3 = SES_hanson_psid,
                 #education 1-2
                 e1 = SES_leo_psid,
-                e2 = SES_ozer_psid)   
-save(SES_mental_PSID, file = 'SES_PSID.RData')
-
-
+                e2 = SES_ozer_psid)        
+SES_mental_PSID
 #select ordinal variables                             
 SES_mental_PSID_ordinal <- SES_mental_PSID[, c("c1", "c2", "c6", "i1", "i2","i3", "dep", "satis")]
 #select dichotomous varibles
