@@ -487,6 +487,80 @@ table(ozer_PSID$SES_ozer_psid)
 
 # Save data
 # save SES score reproduced from CFPS
+# extract CFPS data from each dataframe  
+names_dataframe_cfps <- list(betan_CFPS, moog_CFPS,
+                             jed_CFPS, mcder_CFPS,
+                             romeo1_CFPS, romeo2_CFPS, qiu_CFPS, kim_CFPS, 
+                             hanson_CFPS, leo_CFPS, ozer_CFPS)
+names_paper_cfps <- c("betan", "moog","jed", "mcder",
+                      "romeo1", "romeo2", "qiu", "kim", 
+                      "hanson", "leo", "ozer")
 
+# extract columns of pid and SES from all the dataframes of SES
+N_SES_CFPS <- length(names_paper_cfps)
+dataframes_cfps <- replicate(N_SES_CFPS, data.frame())
 
+for (i in 1:N_SES_CFPS) {
+  dataframes_cfps[[i]] <- names_dataframe_cfps[[i]][, c("pid", paste0("SES_", names_paper_cfps[i], "_cfps"))]
+  print(dataframes_cfps)
+}
+dataframes_cfps
+
+## correlation CFPS
+# merge all ordinal and continuous SES cfps and mental health 
+SES_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>%
+  dplyr::left_join(., mental_CFPS, by = "pid") %>%
+  dplyr::select(-pid) %>%
+  dplyr::rename(dep = depression,
+                cog = cognition,
+                #composite SES 1-6
+                c1 = SES_betan_cfps,
+                c2 = SES_moog_cfps, 
+                c3 = SES_jed_cfps, 
+                c4 = SES_mcder_cfps,
+                c5 = SES_romeo1_cfps,
+                c6 = SES_romeo2_cfps,
+                #income 1-3
+                i1 = SES_qiu_cfps,
+                i2 = SES_kim_cfps,
+                i3 = SES_hanson_cfps,
+                #education 1-2
+                e1 = SES_leo_cfps,
+                e2 = SES_ozer_cfps)
+save(SES_mental_CFPS, file = 'SES_CFPS.RData')
 # save SES score reproduced from PSID
+# extract data 
+names_dataframe_psid <- list(betan_PSID, moog_PSID,
+                             romeo2_PSID, qiu_PSID, kim_PSID, 
+                             hanson_PSID, leo_PSID, ozer_PSID)
+names_paper_psid <- c("betan", "moog", "romeo2", "qiu", "kim", 
+                      "hanson", "leo", "ozer")
+# extract columns of pid and SES from all the dataframes of SES
+N_SES_PSID <- 8
+dataframes_psid <- replicate(N_SES_PSID, data.frame())
+
+for (i in 1:N_SES_PSID) {
+  dataframes_psid[[i]] <- names_dataframe_psid[[i]][, c("pid", paste0("SES_", names_paper_psid[i], "_psid"))]
+  print(dataframes_psid)
+}
+dataframes_psid
+
+## correlation psid
+# merge all ordinal and continuous SES cfps and mental health 
+SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_psid) %>%
+  dplyr::select(-pid) %>%
+  dplyr::rename(dep = depression,
+                satis = life_satisfaction,
+                #composite SES 1-6
+                c1 = SES_betan_psid,
+                c2 = SES_moog_psid, 
+                c6 = SES_romeo2_psid,
+                #income 1-3
+                i1 = SES_qiu_psid,
+                i2 = SES_kim_psid,
+                i3 = SES_hanson_psid,
+                #education 1-2
+                e1 = SES_leo_psid,
+                e2 = SES_ozer_psid)   
+save(SES_mental_PSID, file = 'SES_PSID.RData')
+
