@@ -71,6 +71,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
 
 #select ordinal variables                             
 SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", "i1", "i2","i3")]
+
 #select dichotomous varibles
 SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
 
@@ -82,18 +83,18 @@ print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
 dimname <- colnames(SES_mental_CFPS)
 dimname #see the names
 # create an empty dataframe to store the result of correlation
-N_variable_cfps <- N_SES_CFPS +2
+N_variable_cfps <- ncol(SES_mental_CFPS)
 N_correlation <- N_variable_cfps*N_variable_cfps
-Correlations_cfps <- data.frame(variable1 = rep(dimname, each = N_variable_cfps),
-                           variable2 = rep(dimname, N_variable_cfps),
+Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_variable_cfps)),
+                           variable2 = as.character(rep(dimname, N_variable_cfps)),
                            correlation = rep(NA, N_correlation),
                            p = rep(NA, N_correlation),
                            ci1 = rep(NA, N_correlation),
                            ci2 = rep(NA, N_correlation)) 
 # calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
 for (i in 1:N_correlation) {
-   v1 <- Correlations_cfps[i, "variable1"]
-   v2 <- Correlations_cfps[i, "variable2"]
+   v1 <- as.character(Correlations_cfps[i, "variable1"])  # convert to character, avoid using the wrong column
+   v2 <- as.character(Correlations_cfps[i, "variable2"])
    # if both variables are ordinal, use spearsman
    if(v1 %in% colnames(SES_mental_CFPS_ordinal) && v2 %in% colnames(SES_mental_CFPS_ordinal)){
      
@@ -133,9 +134,9 @@ for (i in 1:N_correlation) {
            Correlations_cfps[i, "ci1"] <- NA
            Correlations_cfps[i, "ci2"] <- NA
          }
-     print(Correlations_cfps)
+     # print(Correlations_cfps)
 }
-Correlations_cfps
+#Correlations_cfps
 
 #create correlation matrix
 cor_cfps_new <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%

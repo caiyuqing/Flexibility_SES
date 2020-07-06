@@ -1,9 +1,9 @@
 data/
 *.tiff
 *.csv
-*.Rproj.user
 *.Rhistory
 *.RData
 *.Ruserdata
-.Rproj.user
+*.Rproj
+*.Rproj.user
 *.png
