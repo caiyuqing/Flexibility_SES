@@ -1,4 +1,4 @@
-################## data extraction for "what is SES" project ##############################
+################## data extraction for "Flexibility of SES" project ##############################
 # 
 # Author      Date(yy-mm-dd)   Change History
 # =================================================
