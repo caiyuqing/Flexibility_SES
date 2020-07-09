@@ -155,13 +155,12 @@ for (i in 1:N_correlation) {
 }
 Correlations_cfps
 
-#create correlation matrix
+# create correlation matrix (hcp: maybe use the tidyverse way to do this?)
 cor_cfps_new <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
-  dplyr::select(-variable1)
-#convert dataframe into matrix
-cormatrix_cfps_new<-as.matrix(cor_cfps_new)
-#naming the rows
-rownames(cormatrix_cfps_new) <- colnames(cormatrix_cfps_new)
+  dplyr::select(-variable1) %>%
+  dplyr::mutate(rowname = colnames(.)) %>%
+  tibble::column_to_rownames(., var = 'rowname')
+
 #rearrange the matrix (put mental health variables first)
 cormatrix_cfps_new<- lessR::corReorder(R= cormatrix_cfps_new, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
 cormatrix_cfps_new

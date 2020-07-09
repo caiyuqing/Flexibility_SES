@@ -79,25 +79,37 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
   dplyr::select(-pid) %>%
   dplyr::rename(dep = depression,
                 cog = cognition,
-                #composite SES 1-6
-                c1 = SES_betan_cfps,
+                # composite SES 1-6
+                c1 = SES_betan_cfps, # we need to think about this part, make it scalable.
                 c2 = SES_moog_cfps, 
                 c3 = SES_jed_cfps, 
                 c4 = SES_mcder_cfps,
                 c5 = SES_romeo1_cfps,
                 c6 = SES_romeo2_cfps,
-                #income 1-3
+                # income 1-3
                 i1 = SES_qiu_cfps,
                 i2 = SES_kim_cfps,
                 i3 = SES_hanson_cfps,
-                #education 1-2
+                # education 1-2
                 e1 = SES_leo_cfps,
                 e2 = SES_ozer_cfps)
-  
 
-# extract colnames of SES_mental_CFPS
+# Select ordinal variables                             
+SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", "i1", "i2","i3")]
+
+# Select dichotomous varibles
+SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
+
+# McDonald’s omega
+CFPS_omega <- SES_mental_CFPS %>%
+  dplyr::select(2:ncol(.)) %>%
+  psych::omega()
+
+print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
+
+# Extract colnames of SES_mental_CFPS
 dimname <- colnames(SES_mental_CFPS)
-dimname #see the names
+# dimname #see the names
 # create an empty dataframe to store the result of correlation
 N_variable_cfps <- ncol(SES_mental_CFPS)
 N_SES_CFPS <- N_variable_cfps - 2
@@ -121,41 +133,58 @@ Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_v
                            ci2 = rep(NA, N_correlation)) 
 # calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
 for (i in 1:N_correlation) {
-   v1 <- as.character(Correlations_cfps[i, "variable1"])  # convert to character, avoid using the wrong column
-   v2 <- as.character(Correlations_cfps[i, "variable2"])
+   v1 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable1"])) %>% dplyr::pull()
+   v2 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable2"])) %>% dplyr::pull()
    # if both variables are ordinal, use spearsman
-   if(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
+   if(dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) > 2){
+   # if(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
      
-     a <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], method = "spearman", exact = FALSE)
+     #a <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], method = "spearman", exact = FALSE)
+     a <- cor.test(v1, v2, method = "spearman", exact = FALSE)
      Correlations_cfps[i, "correlation"]<- a$estimate
      Correlations_cfps[i, "p"] <- round(a$p.value, digits = 5)
      Correlations_cfps[i, "ci1"] <- NA
      Correlations_cfps[i, "ci2"] <- NA
      # if both variables are dichonomous, use phi analysis
-     } else if(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "bin"){
-       Correlations_cfps[i, "correlation"] <- phi(table(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2]))
-       b <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs")                                       
+     } else if (dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
+       Correlations_cfps[i, "correlation"] <- phi(table(v1, v2))
+       b <- cor.test(v1, v2, use = "complete.obs")                                       
+#     } else if(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "bin"){
+#       Correlations_cfps[i, "correlation"] <- phi(table(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2]))
+#       b <- cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs")                                       
        Correlations_cfps[i, "p"]<- round(b$p.value, digits = 5)
        Correlations_cfps[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
        Correlations_cfps[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
+       
        # if one variable is dichonomous and another is ordinal, use biserial correlation (first variable is dichotomous)
-       } else if (variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
-         Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v2], SES_mental_CFPS[,v1], use = "complete.obs", level = 2)
-         c<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
-         Correlations_cfps[i, "p"]<- round(c$p.value, digits = 5)
+       } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
+         
+         Correlations_cfps[i, "correlation"] <- biserial.cor(v2, v1, use = "complete.obs", level = 2)
+         c<-cor.test(v1, v2, use = "complete.obs", level = 2)
+         Correlations_cfps[i, "p"] <- c$p.value
+#       } else if (variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
+#         Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v2], SES_mental_CFPS[,v1], use = "complete.obs", level = 2)
+#         c<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
+#         Correlations_cfps[i, "p"]<- round(c$p.value, digits = 5)
          Correlations_cfps[i, "ci1"] <- round(c$conf.int[1],  digits = 5)
          Correlations_cfps[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
+         
          # same here, when second variable is dichonomous
-         } else if (variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
-           Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
-           d<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
-           Correlations_cfps[i, "p"]<- round(d$p.value, digits = 5)
+         } else if (dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) == 2 ){
+           
+           Correlations_cfps[i, "correlation"]<- biserial.cor(v1, v2, use = "complete.obs", level = 2)
+           d<-cor.test(v1, v2, use = "complete.obs", level = 2)
+           Correlations_cfps[i, "p"] <- d$p.value
+#         } else if (variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
+#           Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
+#           d<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
+#           Correlations_cfps[i, "p"]<- round(d$p.value, digits = 5)
            Correlations_cfps[i, "ci1"] <- round(d$conf.int[1],  digits = 5)
            Correlations_cfps[i, "ci2"] <- round(d$conf.int[2],  digits = 5)
            #chek if there is any variables left 
            } else {
            Correlations_cfps[i, "correlation"] <- NA
-           Correlations_cfps[i, "p"]<- NA
+           Correlations_cfps[i, "p"] <- NA
            Correlations_cfps[i, "ci1"] <- NA
            Correlations_cfps[i, "ci2"] <- NA
          }
