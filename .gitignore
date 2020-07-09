@@ -7,3 +7,4 @@ data/
 *.Rproj
 *.Rproj.user
 *.png
+.Rproj.user
