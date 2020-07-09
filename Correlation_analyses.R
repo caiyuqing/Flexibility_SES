@@ -80,7 +80,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
   dplyr::rename(dep = depression,
                 cog = cognition,
                 # composite SES 1-6
-                c1 = SES_betan_cfps, # we need to think about this part, make it scalable.
+                c1 = SES_betan_cfps, # hcp: we need to think about this part, make it scalable.
                 c2 = SES_moog_cfps, 
                 c3 = SES_jed_cfps, 
                 c4 = SES_mcder_cfps,
@@ -253,144 +253,8 @@ corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, 
 #McDonald’s omega
 CFPS_omega <- psych::omega(SES_mental_CFPS[, 3:(N_SES_CFPS+2)])
 print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
-####################old version##############
-#n_o<- 11
-#n_d<- 2
-##r
-#dimname <- c( "dep", "cog","c1",  "c2",  "c3",  "c4",  "c5",  "c6" , "i1" , "i2" , "i3",  "e1" , "e2" )
-#cormatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d))
-#colnames(cormatrix_CFPS) <- dimname #rename the matrix
-#rownames(cormatrix_CFPS) <- dimname
-#cormatrix_CFPS
-##p
-#pmatrix_CFPS <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_CFPS)))
-#colnames(pmatrix_CFPS) <- dimname #rename the matrix
-#rownames(pmatrix_CFPS) <- dimname
-#pmatrix_CFPS
-#
-########## biserial correlation ##########
-## Yuqing: I try to use polycor::polyserial but SES_leo_cfps seem not fit it 
-##         polycor::polyserial(SES_mental_CFPS$c1, SES_mental_CFPS$e1, std.err = TRUE)
-##         so I use ltm::biserial.cor instead
-## use magicfor to store result of for loop
-## library(magicfor)               
-## calculate correlation between leo and other ordinal variable
-## r
-#library(ltm)
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(biserial.cor(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS$e1, use = "complete.obs", level = 2))
-#}
-#e1_biserial <- magic_result_as_dataframe()  
-#e1_biserial <- e1_biserial[,2] # select the vector of result
-#e1_biserial
-#
-## p
-## extract cor.test result as the results for the p-value of point-biserial test
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(cor.test(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$e1, use = "complete.obs", level = 2))
-#}
-#e1_biserial_cortest <- magic_result_as_dataframe()  
-#e1_biserial_cortest <- e1_biserial_cortest[,2]
-#e1_biserial_cortest #see result
-#
-## extract p-value from cor.test result
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(e1_biserial_cortest[[i]]$p.value)
-#}
-#e1_biserial_p <- magic_result_as_dataframe() 
-#e1_biserial_p <- e1_biserial_p[,2]
-#e1_biserial_p<-round(e1_biserial_p, digits = 5) #see result
-#e1_biserial_p
-#
-## calculate correlation between ozer and other ordinal variable
-## r
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(ltm::biserial.cor(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$e2, use = "complete.obs", level= 2))
-#}
-#e2_biserial <-magic_result_as_dataframe()  
-#e2_biserial<- e2_biserial[,2] #select the vector of result
-#e2_biserial
-#
-## p
-## extract cor.test result as the results for the p-value of point-biserial test
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(cor.test(SES_mental_CFPS_ordinal[,i], SES_mental_CFPS_dicho$e2, use = "complete.obs", level = 2))
-#}
-#e2_biserial_cortest <-magic_result_as_dataframe()  
-#e2_biserial_cortest<-e2_biserial_cortest[,2]
-#e2_biserial_cortest[[2]] #see result
-#
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(e2_biserial_cortest[[i]]$p.value)
-#}
-#e2_biserial_p <- magic_result_as_dataframe() 
-#e2_biserial_p <- e2_biserial_p[,2]
-#e2_biserial_p<-round(e2_biserial_p, digits = 5) #see result
-#e2_biserial_p
-#
-## insert biserial correlation into the big matrix
-## r
-## insert columns and rows and dignol
-## columns
-#cormatrix_CFPS[1:n_o,(n_o+1)] <- e1_biserial
-#cormatrix_CFPS[1:n_o,(n_o+2)] <- e2_biserial
-## rows
-#cormatrix_CFPS[(n_o+1), 1:(n_o)]<- e1_biserial
-#cormatrix_CFPS[(n_o+2), 1:(n_o)]<-e2_biserial
-## diagnol
-#diag(cormatrix_CFPS)<-1 # insert 1 in diagnal 
-#cormatrix_CFPS
-#
-## p
-## insert columns and rows and dignol
-## columns
-#e2_biserial_p
-#e1_biserial_p
-#pmatrix_CFPS[1:n_o,(n_o +1)] <- e1_biserial_p
-#pmatrix_CFPS[1:n_o,(n_o +2)] <- e2_biserial_p
-#pmatrix_CFPS
-#
-## rows
-#pmatrix_CFPS[(n_o +1), 1:(n_o)]<- e1_biserial_p
-#pmatrix_CFPS[(n_o +2), 1:(n_o)]<- e2_biserial_p
-## diagnol
-#diag(pmatrix_CFPS)<-NA # insert NA in diagnal 
-#pmatrix_CFPS
-#
-######## phi coefficient
-## calculate phi coefficient between dichotomous variables
-#phi_e1_e2 <-phi(table(SES_mental_CFPS_dicho))
-## p-value for phi coefficient
-#phi_e1_e2_cortest <- cor.test(SES_mental_CFPS_dicho$e1,SES_mental_CFPS_dicho$e2, use = "complete.obs", method = "pearson")
-#phi_e1_e2_p <- round(phi_e1_e2_cortest$p.value, digits = 5)
-#
-## insert phi coeefficient into the big matrix
-## r
-#cormatrix_CFPS[(n_o +1),(n_o +2)] <- phi_e1_e2
-#cormatrix_CFPS[(n_o +2),(n_o +1)] <- phi_e1_e2
-#cormatrix_CFPS #see result
-#
-## p
-#pmatrix_CFPS[(n_o +1),(n_o +2)] <- phi_e1_e2_p
-#pmatrix_CFPS[(n_o +2),(n_o +1)] <- phi_e1_e2_p
-#pmatrix_CFPS #see result
-#
-#cormatrix_CFPS
-#
-#corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS, p.mat = pmatrix_CFPS, insig = "blank",sig.level = 0.05,
-#               cl.lim = c(-0.111, 1), tl.cex = 0.8, number.cex = 0.8)
-#cormatrix_CFPS_SES <- cormatrix_CFPS[3:13, 3:13]
-#pmatrix_CFPS_SES <- pmatrix_CFPS[3:13, 3:13]
-#corrplot_CFPS<-corrplot.mixed(cormatrix_CFPS_SES, p.mat = pmatrix_CFPS_SES, insig = "blank", sig.level = 0.05,
-#                              cl.lim = c(-0.04, 1), tl.cex = 0.8, number.cex = 0.8)
-#
-##################################### psid matrix##########################################
+
+##################################### PSID matrix##########################################
 # Mental health and cognition PSID
 load("df.PSID_child.RData")
 mental_PSID <- df.PSID_child %>%
@@ -554,12 +418,10 @@ corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses,
 #McDonald’s omega
 PSID_omega <- psych::omega(SES_mental_PSID[,3:(N_SES_PSID+2)])
 print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
-#######Combine two plots into one#########
-##install.packages("PerformanceAnalytics")
-#library(PerformanceAnalytics)
-#chart.Correlation(SES_mental_PSID, histogram=TRUE, density = TRUE)
 
-#create figure of two correlational matrix in one pdf (all variables)
+#######Combine two plots into one#########
+
+# create figure of two correlational matrix in one pdf (all variables)
 pdf("Correlational matrix.pdf",width=15,height=9)
 cormatrix_CFPS
 opar<-par(no.readonly=T)
@@ -573,7 +435,7 @@ mtext("Correlation matrix PSID", side = 1, line = -1)
 par(opar)
 dev.off()
 
-#create figure of two correlational matrix in one pdf (only SES variables)
+# create figure of two correlational matrix in one pdf (only SES variables)
 pdf("Correlational matrix SES.pdf",width=15,height=9)
 opar<-par(no.readonly=T)
 par(mfrow=c(1,2))
@@ -598,204 +460,3 @@ table_ses_mental_psid_p
 
 write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
 write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
-
-###################old version###############
-##extract colnames of SES_mental_PSID
-#n_o<- 8
-#n_d<- 2
-##r
-#dimname <- c( "dep", "satis","c1",  "c2",    "c6" , "i1" , "i2" , "i3",  "e1" , "e2" )
-#cormatrix_PSID <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d))
-#colnames(cormatrix_PSID) <- dimname #rename the matrix
-#rownames(cormatrix_PSID) <- dimname
-#cormatrix_PSID
-##p
-#pmatrix_PSID <- matrix(data = NA, nrow = (n_o+n_d), ncol = (n_o+n_d), dimnames = list(colnames(SES_mental_PSID)))
-#colnames(pmatrix_PSID) <- dimname #rename the matrix
-#rownames(pmatrix_PSID) <- dimname
-#pmatrix_PSID
-#
-##calculate the spearman correlation matrix of all ordinal variables
-##library("correlation")
-#summary(SES_mental_PSID_ordinal)
-##cor_ses_mental_psid_ordinal<- Hmisc::rcorr(as.matrix(SES_mental_PSID_ordinal), type = "spearman")
-#cor_ses_mental_psid_ordinal<- corr.test(as.matrix(SES_mental_PSID_ordinal), use = "pairwise",method="spearman",adjust="holm", 
-#          alpha=.05,ci=TRUE,minlength=5)
-#
-##insert correlation matrix into the big matrix
-##r
-#cormatrix_PSID[1:n_o, 1:n_o] <- cor_ses_mental_psid_ordinal$r
-#cormatrix_PSID
-##p
-#pmatrix_PSID[1:n_o, 1:n_o] <- cor_ses_mental_psid_ordinal$p
-#pmatrix_PSID<-round(pmatrix_PSID, digits = 5)
-#pmatrix_PSID
-##ci
-#ci_psid<-round(cor_ses_mental_psid_ordinal$ci, digits = 3)
-#write.csv(ci_psid[2:13, 1:3], file ="ci_psid1.csv")
-##########biserial correlation##########
-##?polycor::polyserial work here
-##install.packages("magicfor")
-##use magicfor to store result of for loop
-#library(magicfor)            
-##calculate correlation between leo and other ordinal variable
-##polyserial result
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(polycor::polyserial(SES_mental_PSID_ordinal[,i], SES_mental_PSID$e1, std.err = TRUE))
-#}
-#e1_biserial_poly <- magic_result_as_dataframe()  #polyserial result
-#e1_biserial_poly <- e1_biserial_poly[,2] #select the vector of result
-#e1_biserial_poly
-#
-##extract r
-#magic_for(print, silent = TRUE)
-#for (i in 1:n_o) {
-#  print(e1_biserial_poly[[i]]$rho)
-#}
-#e1_biserial <- magic_result_as_dataframe()  
-#e1_biserial<-e1_biserial[,2]
-#e1_biserial
-#
-##extract p
-#magic_for(print, silent = TRUE)
-#for (i in 1:n_o) {
-#  print(2 * pnorm(-abs(e1_biserial_poly[[i]]$rho / sqrt(e1_biserial_poly[[i]]$var[1,1])))) #std.erro = sqrt(X$var[1,1]), p-value = 2 * pnorm(-abs(rho / std.error)))
-#}
-#e1_biserial_p <- magic_result_as_dataframe()  
-#e1_biserial_p <-e1_biserial_p[,2]
-#e1_biserial_p<-round(e1_biserial_p, digits = 5)
-#
-##calculate correlation between ozer and other ordinal variable
-##polyserial result
-#magic_for(print, silent = TRUE) # call magic_for()
-#for (i in 1:n_o) {
-#  print(polycor::polyserial(SES_mental_PSID_ordinal[,i], SES_mental_PSID$e2,std.err = TRUE))
-#}
-#e2_biserial_poly <-magic_result_as_dataframe()  
-#e2_biserial_poly<- e2_biserial_poly[,2] #select the vector of result
-#e2_biserial_poly
-#
-##extract r
-#magic_for(print, silent = TRUE)
-#for (i in 1:n_o) {
-#  print(e2_biserial_poly[[i]]$rho)
-#}
-#e2_biserial <- magic_result_as_dataframe()  
-#e2_biserial<- e2_biserial[,2]
-#e2_biserial
-#
-##extract p
-#magic_for(print, silent = TRUE)
-#for (i in 1:n_o) {
-#  print(2 * pnorm(-abs(e2_biserial_poly[[i]]$rho / sqrt(e2_biserial_poly[[i]]$var[1,1])))) #std.erro = sqrt(X$var[1,1]), p-value = 2 * pnorm(-abs(rho / std.error)))
-#}
-#e2_biserial_p <- magic_result_as_dataframe()  
-#e2_biserial_p <-e2_biserial_p[,2]
-#e2_biserial_p <- round(e2_biserial_p, digits = 5)
-#e2_biserial_p
-#
-##insert biserial correlation into the big matrix
-##r
-##insert columns and rows and dignol
-##columns
-#cormatrix_PSID[1:n_o,(n_o+1)] <- e1_biserial
-#cormatrix_PSID[1:n_o,(n_o+2)] <- e2_biserial
-##rows
-#cormatrix_PSID[(n_o+1), 1:(n_o)]<- e1_biserial
-#cormatrix_PSID[(n_o+2), 1:(n_o)]<-e2_biserial
-##diagnol
-#diag(cormatrix_PSID)<-1 # insert 1 in diagnal 
-#cormatrix_PSID
-#
-##p
-##insert columns and rows and dignol
-##columns
-#pmatrix_PSID[1:n_o,(n_o +1)] <- e1_biserial_p
-#pmatrix_PSID[1:n_o,(n_o +2)] <- e2_biserial_p
-#pmatrix_PSID
-##rows
-#pmatrix_PSID[(n_o +1), 1:n_o]<- e1_biserial_p
-#pmatrix_PSID[(n_o +2), 1:n_o]<-e2_biserial_p
-##diagnol
-#diag(pmatrix_PSID)<-NA # insert NA in diagnal 
-#pmatrix_PSID
-#
-########phi coefficient
-##calculate phi coefficient between dichotomous variables
-#SES_mental_PSID_dicho <- SES_mental_PSID[, c("e1","e2")]
-#phi_e1_e2 <-phi(table(SES_mental_PSID_dicho))
-##p-value for phi coefficient
-#phi_e1_e2_cortest <- cor.test(SES_mental_PSID_dicho$e1,SES_mental_PSID_dicho$e2, use = "complete.obs", method = "pearson")
-#phi_e1_e2_p <- round(phi_e1_e2_cortest$p.value, digits = 5)
-##insert phi coeefficient into the big matrix
-##r
-#cormatrix_PSID[(n_o +1),(n_o +2)] <- phi_e1_e2
-#cormatrix_PSID[(n_o +2),(n_o +1)] <- phi_e1_e2
-#cormatrix_PSID #see result
-##p
-#pmatrix_PSID[(n_o +1),(n_o +2)] <- phi_e1_e2_p
-#pmatrix_PSID[(n_o +2),(n_o +1)] <- phi_e1_e2_p
-#pmatrix_PSID #see result
-#cor_matrix_psid_new
-#
-##correlational plot 
-#corrplot_PSID <-corrplot.mixed(cormatrix_PSID, p.mat = pmatrix_PSID, insig = "blank", sig.level = 0.05,
-#         cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
-#cormatrix_PSID_SES <-cormatrix_PSID[3:10, 3:10]
-#pmatrix_PSID_SES<- pmatrix_PSID[3:10, 3:10]
-#corrplot_PSID <-corrplot.mixed(cormatrix_PSID_SES, p.mat = pmatrix_PSID_SES, insig = "blank", sig.level = 0.05,
-#                               cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
-#
-############calculate ci between e1 and dep, e1 and LS, e1 and i2 by hand#########
-##formula from http://www.real-statistics.com/correlation/biserial-correlation/
-##e1 and dep
-#library(psych)
-#r<-polycor::polyserial(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e1)
-#dep_e1<-SES_mental_PSID[,c("dep", "e1")]
-#dep_e1<-drop_na(dep_e1)
-#n<- count.pairwise(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e1)
-#ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
-#ub
-#lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
-#lb
-##e1 and LS
-#r<-polycor::polyserial(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e1)
-#r
-#LS_e1<-SES_mental_PSID[,c("LS", "e1")]
-#LS_e1<-drop_na(LS_e1)
-#n<- 
-#ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
-#ub <-pairwiseCount(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e1)
-#lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
-#lb
-##e2 and dep
-#library(psych)
-#r<-polycor::polyserial(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e2)
-#dep_e2<-SES_mental_PSID[,c("dep", "e2")]
-#dep_e2<-drop_na(dep_e2)
-#n<- pairwiseCount(SES_mental_PSID_ordinal$dep, SES_mental_PSID$e2)
-#ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
-#ub
-#lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
-#lb
-##e2 and LS
-#r<-polycor::polyserial(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e2)
-#r
-#LS_e2<-SES_mental_PSID[,c("LS", "e2")]
-#LS_e2<-drop_na(LS_e2)
-#n<- pairwiseCount(SES_mental_PSID_ordinal$LS, SES_mental_PSID$e2)
-#ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
-#ub
-#lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
-#lb
-##e1 and i2
-#r<-polycor::polyserial(SES_mental_PSID_ordinal$i2, SES_mental_PSID$e1)
-#i2_e1<-SES_mental_PSID[,c("i2", "e1")]
-#i2_e1<-drop_na(i2_e1)
-#n<- 2823
-#ub <-fisherz(2*r / sqrt(5)) + 0.5*1.96*sqrt(5 / n)
-#ub
-#lb <-fisherz(2*r / sqrt(5)) - 0.5*1.96*sqrt(5 / n)
-#lb
-#
