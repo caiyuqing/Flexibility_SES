@@ -1,14 +1,30 @@
 # Visualize the data in sankey
 # Load package
+
+### clean the memory to avoid unnecessary errors:
+rm(list = ls())
+
 install.packages("networkD3")
 library(networkD3)
 library(dplyr)
 library(htmlwidgets)
 library(htmltools)
+if (!require(easyalluvial)) {install.packages("easyalluvial",repos = "http://cran.us.r-project.org"); require(easyalluvial)}
 
 df <- read.csv('ses_data.csv') %>%
         dplyr::mutate(Uni_data = paste('data',Uni_data,sep='_'),
                       SES_Ver = paste('Index',SES_Ver,sep='_'))
+df_p <- df %>% dplyr::select(-1) %>%
+        dplyr::select(Nation, everything()) 
+df_p %>%
+        alluvial_wide(.,
+                      col_vector_flow = 'grey',
+                      col_vector_value = palette_filter( greys = F),
+                      stratum_label_size = 1, 
+                      stratum_width = 1/3,
+                      colorful_fill_variable_stratum = F) %>%
+        add_marginal_histograms(df_p)
+
 
 links <- df %>%
         dplyr::select(-Order_by_author) %>%
