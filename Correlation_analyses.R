@@ -123,7 +123,7 @@ for (i in 1:N_variable_cfps) {
     variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA}
 }
-
+variable_type
 #build a correlation table to store the results
 Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_variable_cfps)),
                            variable2 = as.character(rep(dimname, N_variable_cfps)),
@@ -131,6 +131,7 @@ Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_v
                            p = rep(NA, N_correlation),
                            ci1 = rep(NA, N_correlation),
                            ci2 = rep(NA, N_correlation)) 
+dplyr::n_distinct(SES_mental_CFPS$e1)
 # calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
 for (i in 1:N_correlation) {
    v1 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable1"])) %>% dplyr::pull()
@@ -358,7 +359,7 @@ for (i in 1:N_correlation) {
            Correlations_psid[i, "ci1"] <- NA
            Correlations_psid[i, "ci2"] <- NA
   }
-  #print(Correlations_psid)
+  print(Correlations_psid)
 }
 Correlations_psid
 #transform correlation result into matrix
