@@ -131,7 +131,7 @@ Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_v
                            p = rep(NA, N_correlation),
                            ci1 = rep(NA, N_correlation),
                            ci2 = rep(NA, N_correlation)) 
-dplyr::n_distinct(SES_mental_CFPS$e1)
+
 # calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
 for (i in 1:N_correlation) {
    v1 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable1"])) %>% dplyr::pull()
@@ -308,6 +308,7 @@ for (i in 1:N_variable_psid) {
     variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_PSID[,var]))) > 2){
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA}
 }
+variable_type
 
 #build an empty dataframe for correlation result
 Correlations_psid <- data.frame(variable1 = rep(dimname, each = N_variable_psid),
@@ -316,40 +317,59 @@ Correlations_psid <- data.frame(variable1 = rep(dimname, each = N_variable_psid)
                                 p = rep(NA, N_correlation),
                                 ci1 = rep(NA, N_correlation),
                                 ci2 = rep(NA, N_correlation)) 
+v1 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable1"])) %>% dplyr::pull()
+v2 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable2"])) %>% dplyr::pull()
+v1
+v1_v2 <- cbind(v1, v2)
+as.data.frame()
+n<-drop_na(as.data.frame(v1_v2))
+n
+nrow(n)
+phi(table(v1,v2))
+#v1 <- Correlations_psid[i, "variable1"]
 #calculating the correlations between varibles with different methods
 for (i in 1:N_correlation) {
-  v1 <- Correlations_psid[i, "variable1"]
-  v2 <- Correlations_psid[i, "variable2"]
+  v1 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[i, "variable1"])) %>% dplyr::pull()
+  v2 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[i, "variable2"])) %>% dplyr::pull()
+ #v1 <- Correlations_psid[i, "variable1"]
+ #v2 <- Correlations_psid[i, "variable2"]
   # if both variables are ordinal, use spearman correlation
-  if(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
-    a <- cor.test(SES_mental_PSID[,v1], SES_mental_PSID[,v2], method = "spearman", exact = FALSE)
+  if(dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) > 2){
+  #(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
+    #a <- cor.test(SES_mental_PSID[,v1], SES_mental_PSID[,v2], method = "spearman", exact = FALSE)
+    a <- cor.test(v1, v2, method = "spearman", exact = FALSE)
     Correlations_psid[i, "correlation"]<- a$estimate
     Correlations_psid[i, "p"] <- round(a$p.value, digits = 5)
     Correlations_psid[i, "ci1"] <- NA
     Correlations_psid[i, "ci2"] <- NA
-    #if both variables are dichonomous, use phi analysis
-    } else if (variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "bin"){
-    Correlations_psid[i, "correlation"] <- phi(table(SES_mental_PSID[,v1], SES_mental_PSID[,v2]))
-    b <- cor.test(SES_mental_PSID[,v1], SES_mental_PSID[,v2], use = "complete.obs")                                       
+    ##if both variables are dichonomous, use phi analysis
+    } else if(dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
+      Correlations_cfps[i, "correlation"] <- phi(table(v1, v2))
+      b <- cor.test(v1, v2, use = "complete.obs")
+  #(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "bin"){
+  # Correlations_psid[i, "correlation"] <- phi(table(SES_mental_PSID[,v1], SES_mental_PSID[,v2]))
+  # b <- cor.test(SES_mental_PSID[,v1], SES_mental_PSID[,v2], use = "complete.obs")                                       
     Correlations_psid[i, "p"]<- round(b$p.value, digits = 5)
     Correlations_psid[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
     Correlations_psid[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
       #if one variable is ordinal another is dichonomous, use biserial analysis (here because I use polyserial function, I calculate the p-value and ci manually)
-      } else if (variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
-      c<- polycor::polyserial(SES_mental_PSID[,v2], SES_mental_PSID[,v1], std.err = TRUE)
+      } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
+  #(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
+      c<- polycor::polyserial(v2, v1, std.err = TRUE)
       Correlations_psid[i, "correlation"]<- c$rho
       Correlations_psid[i, "p"]<- round(2 * pnorm(-abs(c$rho / sqrt(c$var[1,1]))), digits = 5) #std.erro = sqrt(X$var[1,1]), p-value = 2 * pnorm(-abs(rho / std.error)))
-      v1_v2 <- SES_mental_PSID[,c(v1,v2)]
-      n<- drop_na(v1_v2)
+      v1_v2 <- cbind(v1, v2)
+      n<- drop_na(as.data.frame(v1_v2))
       Correlations_psid[i, "ci1"] <- round(fisherz(2*c$rho / sqrt(5)) - 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
       Correlations_psid[i, "ci2"] <- round(fisherz(2*c$rho / sqrt(5)) + 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
         #same here, just alternating the sequence of two variables
-        } else if (variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
-        c <- polycor::polyserial(SES_mental_PSID[,v1], SES_mental_PSID[,v2], std.err = TRUE)
+        } else if (dplyr::n_distinct(v2, na.rm = T) == 2  &&  dplyr::n_distinct(v1, na.rm = T) > 2){
+  #(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
+        c <- polycor::polyserial(v1, v2, std.err = TRUE)
         Correlations_psid[i, "correlation"]<- c$rho
         Correlations_psid[i, "p"]<- round(2 * pnorm(-abs(c$rho / sqrt(c$var[1,1]))), digits = 5) #std.erro = sqrt(X$var[1,1]), p-value = 2 * pnorm(-abs(rho / std.error)))
-        v1_v2 <- SES_mental_PSID[,c(v1,v2)]
-        n<- drop_na(v1_v2)
+        v1_v2 <- cbind(v1,v2)
+        n<- drop_na(as.data.frame(v1_v2))
         Correlations_psid[i, "ci1"] <- round(fisherz(2*c$rho / sqrt(5)) - 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
         Correlations_psid[i, "ci2"] <- round(fisherz(2*c$rho / sqrt(5)) + 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
           #see whether there are any variables left
