@@ -94,12 +94,6 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
                 e1 = SES_leo_cfps,
                 e2 = SES_ozer_cfps)
 
-# Select ordinal variables                             
-SES_mental_CFPS_ordinal <- SES_mental_CFPS[, c("dep", "cog","c1", "c2", "c3", "c4","c5", "c6", "i1", "i2","i3")]
-
-# Select dichotomous varibles
-SES_mental_CFPS_dicho <- SES_mental_CFPS[,c("e1","e2")]
-
 # McDonald’s omega
 CFPS_omega <- SES_mental_CFPS %>%
   dplyr::select(2:ncol(.)) %>%
@@ -162,7 +156,7 @@ for (i in 1:N_correlation) {
          
          Correlations_cfps[i, "correlation"] <- biserial.cor(v2, v1, use = "complete.obs", level = 2)
          c<-cor.test(v1, v2, use = "complete.obs", level = 2)
-         Correlations_cfps[i, "p"] <- c$p.value
+         Correlations_cfps[i, "p"] <- round(c$p.value, digits = 5)
 #       } else if (variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
 #         Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v2], SES_mental_CFPS[,v1], use = "complete.obs", level = 2)
 #         c<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
@@ -175,7 +169,7 @@ for (i in 1:N_correlation) {
            
            Correlations_cfps[i, "correlation"]<- biserial.cor(v1, v2, use = "complete.obs", level = 2)
            d<-cor.test(v1, v2, use = "complete.obs", level = 2)
-           Correlations_cfps[i, "p"] <- d$p.value
+           Correlations_cfps[i, "p"] <- round(d$p.value, digits = 5)
 #         } else if (variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
 #           Correlations_cfps[i, "correlation"]<- biserial.cor(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
 #           d<-cor.test(SES_mental_CFPS[,v1], SES_mental_CFPS[,v2], use = "complete.obs", level = 2)
@@ -251,10 +245,6 @@ pmatrix_cfps_ses <- pmatrix_cfps[3:13, 3:13]
 corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.1, 1), tl.cex = 0.8, number.cex = 0.8)
 
-#McDonald’s omega
-CFPS_omega <- psych::omega(SES_mental_CFPS[, 3:(N_SES_CFPS+2)])
-print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
-
 ##################################### PSID matrix##########################################
 # Mental health and cognition PSID
 load("df.PSID_child.RData")
@@ -290,6 +280,13 @@ SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
                 #education 1-2
                 e1 = SES_leo_psid,
                 e2 = SES_ozer_psid)   
+# McDonald’s omega
+PSID_omega <- SES_mental_PSID %>%
+  dplyr::select(2:ncol(.)) %>%
+  psych::omega()
+
+print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
+
 
 #extract colnames of SES_mental_PSID
 dimname <- colnames(SES_mental_PSID)
@@ -317,16 +314,8 @@ Correlations_psid <- data.frame(variable1 = rep(dimname, each = N_variable_psid)
                                 p = rep(NA, N_correlation),
                                 ci1 = rep(NA, N_correlation),
                                 ci2 = rep(NA, N_correlation)) 
-v1 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable1"])) %>% dplyr::pull()
-v2 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable2"])) %>% dplyr::pull()
-v1
-v1_v2 <- cbind(v1, v2)
-as.data.frame()
-n<-drop_na(as.data.frame(v1_v2))
-n
-nrow(n)
-phi(table(v1,v2))
-#v1 <- Correlations_psid[i, "variable1"]
+
+
 #calculating the correlations between varibles with different methods
 for (i in 1:N_correlation) {
   v1 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[i, "variable1"])) %>% dplyr::pull()
@@ -344,7 +333,7 @@ for (i in 1:N_correlation) {
     Correlations_psid[i, "ci2"] <- NA
     ##if both variables are dichonomous, use phi analysis
     } else if(dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
-      Correlations_cfps[i, "correlation"] <- phi(table(v1, v2))
+      Correlations_psid[i, "correlation"] <- phi(table(v1, v2))
       b <- cor.test(v1, v2, use = "complete.obs")
   #(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "bin"){
   # Correlations_psid[i, "correlation"] <- phi(table(SES_mental_PSID[,v1], SES_mental_PSID[,v2]))
@@ -382,6 +371,7 @@ for (i in 1:N_correlation) {
   print(Correlations_psid)
 }
 Correlations_psid
+?phi()
 #transform correlation result into matrix
 cormatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
   dplyr::select(-variable1) %>%
@@ -436,9 +426,7 @@ pmatrix_psid_ses <- pmatrix_psid[3:10, 3:10]
 #plot correlation of only SES variables
 corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
-#McDonald’s omega
-PSID_omega <- psych::omega(SES_mental_PSID[,3:(N_SES_PSID+2)])
-print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
+
 
 #######Combine two plots into one#########
 
