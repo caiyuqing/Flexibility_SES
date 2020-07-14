@@ -33,8 +33,8 @@ if (!require(correlation)) {install.packages("correlation",repos = "http://cran.
 if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org"); require(ltm)}
 if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
 if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.us.r-project.org"); require(GPArotation)}
-if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
-if (!require(lessR)) {install.packages("spearmanCI",repos = "http://cran.us.r-project.org"); require(lessR)}
+#if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
+if (!require(lessR)) {install.packages("lessR",repos = "http://cran.us.r-project.org"); require(lessR)}
 
 ################## CFPS ######################
 # Mental health and cognition CPFS
@@ -251,8 +251,8 @@ pmatrix_cfps_ses <- pmatrix_cfps[3:13, 3:13]
 corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.1, 1), tl.cex = 0.8, number.cex = 0.8)
 
-#McDonald’s omega
-CFPS_omega <- psych::omega(SES_mental_CFPS[, 3:(N_SES_CFPS+2)])
+# McDonald’s omega
+CFPS_omega <- psych::omega(SES_mental_CFPS[, 1:(ncol(SES_mental_CFPS)-2)])
 print(c(CFPS_omega$omega_h, CFPS_omega$omega.tot))
 
 ##################################### PSID matrix##########################################
@@ -319,11 +319,11 @@ Correlations_psid <- data.frame(variable1 = rep(dimname, each = N_variable_psid)
                                 ci2 = rep(NA, N_correlation)) 
 v1 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable1"])) %>% dplyr::pull()
 v2 <- SES_mental_PSID %>% dplyr::select(as.character(Correlations_psid[68, "variable2"])) %>% dplyr::pull()
-v1
+# v1
 v1_v2 <- cbind(v1, v2)
 as.data.frame()
-n<-drop_na(as.data.frame(v1_v2))
-n
+n <-drop_na(as.data.frame(v1_v2))
+# n
 nrow(n)
 phi(table(v1,v2))
 #v1 <- Correlations_psid[i, "variable1"]
@@ -352,7 +352,8 @@ for (i in 1:N_correlation) {
     Correlations_psid[i, "p"]<- round(b$p.value, digits = 5)
     Correlations_psid[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
     Correlations_psid[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
-      #if one variable is ordinal another is dichonomous, use biserial analysis (here because I use polyserial function, I calculate the p-value and ci manually)
+      
+    #if one variable is ordinal another is dichotomous, use biserial analysis (here because I use polyserial function, I calculate the p-value and ci manually)
       } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
   #(variable_type[variable_type$variable == v1, "type"] == "bin" && variable_type[variable_type$variable == v2, "type"] == "ordi"){
       c<- polycor::polyserial(v2, v1, std.err = TRUE)
@@ -362,7 +363,8 @@ for (i in 1:N_correlation) {
       n<- drop_na(as.data.frame(v1_v2))
       Correlations_psid[i, "ci1"] <- round(fisherz(2*c$rho / sqrt(5)) - 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
       Correlations_psid[i, "ci2"] <- round(fisherz(2*c$rho / sqrt(5)) + 0.5*1.96*sqrt(5 / nrow(n)),  digits = 5)
-        #same here, just alternating the sequence of two variables
+        
+      #same here, just alternating the sequence of two variables
         } else if (dplyr::n_distinct(v2, na.rm = T) == 2  &&  dplyr::n_distinct(v1, na.rm = T) > 2){
   #(variable_type[variable_type$variable == v1, "type"] == "ordi" && variable_type[variable_type$variable == v2, "type"] == "bin"){
         c <- polycor::polyserial(v1, v2, std.err = TRUE)
@@ -381,16 +383,19 @@ for (i in 1:N_correlation) {
   }
   print(Correlations_psid)
 }
-Correlations_psid
-#transform correlation result into matrix
+
+# Correlations_psid
+
+# transform correlation result into matrix
+# hcp: can we replace reshape2 with pivot_wider()?
 cormatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
   dplyr::select(-variable1) %>%
   as.matrix(.)
-#name rows with column names
+# name rows with column names
 rownames(cormatrix_psid) <- colnames(cormatrix_psid)
-#rearrange the matrix (put mental health variables first)
+# rearrange the matrix (put mental health variables first)
 cormatrix_psid<- lessR::corReorder(R= cormatrix_psid, order = "manual", vars = c(dep, satis, c1, c2, c6, i1, i2, i3, e1, e2))
-cormatrix_psid
+# cormatrix_psid
 
 #transform p-value table into matrix
 pmatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
@@ -401,17 +406,19 @@ rownames(pmatrix_psid) <- colnames(pmatrix_psid)
 #rearrange the matrix (put mental health variables first)
 pmatrix_psid<- lessR::corReorder(R= pmatrix_psid, order = "manual", vars = c(dep, satis, c1, c2, c6, i1, i2, i3, e1, e2))
 pmatrix_psid
+
 # cor.test with spearman cannot calculate ci, calculate them separately (same as CFPS)
-corrtest_spearman <-corr.test(SES_mental_PSID[,variable_type[variable_type$type == "ordi",]$variable], y = NULL, use = "pairwise",method="spearman",adjust="holm", 
+corrtest_spearman <- corr.test(SES_mental_PSID[,variable_type[variable_type$type == "ordi",]$variable], y = NULL, use = "pairwise",method="spearman",adjust="holm", 
                      alpha=.05,ci=TRUE,minlength=5)
-corrtest_spearman$ci
+# corrtest_spearman$ci
 ci_spearman_name <- rownames(corrtest_spearman$ci)
-ci_spearman_name
+# ci_spearman_name
 corrtest_spearman$ci$name_combine <- ci_spearman_name
 corrtest_spearman$ci$name_combine2 <- ci_spearman_name
 corrtest_spearman_ci2<-corrtest_spearman$ci 
-corrtest_spearman_ci2
+# corrtest_spearman_ci2
 names(corrtest_spearman_ci2) <- c("lower2", "r2", "upper2", "p2", "name_combine","name_combine2")
+
 Correlations_psid_with_ci <- Correlations_psid %>%
   dplyr::mutate(name_combine = paste0(variable1, "-", variable2)) %>%
   dplyr::mutate(name_combine2 = paste0(variable2, "-", variable1)) %>%
@@ -424,20 +431,21 @@ Correlations_psid_with_ci <- Correlations_psid %>%
                                   ifelse(!is.na(lower), lower, lower2))) %>%
   dplyr::select(variable1, variable2, correlation, p, ci_lower, ci_upper) %>%
   dplyr::mutate(ci = paste0("[", round(ci_lower, digits = 4), ",", " ", round(ci_upper, digits= 4), "]"))
-Correlations_psid_with_ci
+# Correlations_psid_with_ci
 Correlations_psid_with_ci[, c("variable1","variable2","correlation", "ci")]
 
-#plot correlation of all the variables
-corrplot_PSID <-corrplot.mixed(cormatrix_psid, p.mat = pmatrix_psid, insig = "blank", sig.level = 0.05,
+# plot correlation of all the variables
+corrplot_PSID <- corrplot.mixed(cormatrix_psid, p.mat = pmatrix_psid, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
 #extract only SES variables
 cormatrix_psid_ses <-cormatrix_psid[3:10, 3:10]
 pmatrix_psid_ses <- pmatrix_psid[3:10, 3:10]
-#plot correlation of only SES variables
+
+# Plot correlation of only SES variables (hcp: please check this plot)
 corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
 #McDonald’s omega
-PSID_omega <- psych::omega(SES_mental_PSID[,3:(N_SES_PSID+2)])
+PSID_omega <- psych::omega(SES_mental_PSID[,3:(N_SES_PSID+2)]) # hcp: check the columns here again
 print(c(PSID_omega$omega_h, PSID_omega$omega.tot))
 
 #######Combine two plots into one#########
