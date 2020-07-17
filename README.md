@@ -30,7 +30,8 @@ We used `Correlation_analyses.R` to quantify the variability caused by the flexi
 
 * PSID: The McDonald's omega all eight SES scores were (hieratical) and (total). 
 
-##### Assessing the variability in effect size caused by SES measurement flexibility
+##### Variability in effect size caused by SES measurement flexibility
+
 We used a few surrogate target variable to estimate the variability.
 
 * CFPS: The correlation between different SES scores and depression score varied from XX to XX; between SES scores and cognitive ability varied from XX to XX.
