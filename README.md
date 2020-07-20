@@ -20,15 +20,19 @@ We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.
   * Output: two RData files containing all the SES measurements calculated of each participants (`SES_CFPS.RData`; `SES_PSID.RData`)
 
 ### Assess the flexibility and variability
-We used `Correlation_analyses.R` to quantify the variability caused by the flexibility.
+We used `Correlation_analyses.R` to quantify the variability caused by the flexibility. To visualize the flexibility, we used `SankeyPlot_trial.r`, which still needs further revision.
+
+![ ](Alluvial.jpg)
 
 ##### Correlation between SES scores
 * All the SES scores are positively correlated but the strength vary from R = 0.17 to R = 0.99 (CFPS); R = 0.43 to R = 0.95
 
-###### Omega
-* CFPS: The McDonald’s omega for all eleven SES scores were 0.706 (hieratical) and 0.922 (total)
+###### ICC
+We used Intra-Class Correlation ($ICC_{C, K}$) to quantify the consistency between different SES scores. In this way, we view each way of calculating SES as the rating of a "rater", and ICC can estimate how consistent are these "raters" are. 
 
-* PSID: The McDonald's omega all eight SES scores were (hieratical) and (total). 
+* CFPS: 
+
+* PSID: . 
 
 ##### Variability in effect size caused by SES measurement flexibility
 
