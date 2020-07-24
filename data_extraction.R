@@ -1,18 +1,37 @@
-################## data extraction for "what is ses" project ##############################
-# 
-# Author      Date(yy-mm-dd)   Change History
-#==========================================
-# Cai, Y-Q    19-03-09         The first version
-# Hu, C-P     20-04-26         Validate the script
-# 
-#
-###### input######
-# CFPS data 2010
-###### output #####
-#
-#
-#
-#
+########################################################################################
+########################################################################################
+###                                                                                  ###
+###                 R script for Flexibility of SES project                          ###
+###                           [data extraction]                                      ###
+###               Email = hcp4715@gmail.com       cyq_2016@outlook.com               ###
+###                                                                                  ###
+########################################################################################
+########################################################################################
+
+########################################################################################
+########################################################################################
+###                                                                                  ###
+###  Purpose:                                                                        ###
+###  Preprocess the data of CFPS (2010) to extract related variables (SES and mental ###
+###  health)                                                                         ###
+###  * The data of PSID (2017) was extracted on the official website of PSID,        ###
+###    hence, no preprocessing is required                                           ###
+###  Code authors: Chuan-Peng Hu, PhD, Neuroimaging Center (NIC), Johannes Gutenberg ###  
+###                University Medical Center, 55131 Mainz, Germany;                  ###
+###                Yuqing Cai, Tsinghua University, 100086, China                    ###
+###                                                                                  ###
+###  Input data                                                                      ###
+###      Oringinal data of CFPS 2010: csv file: '2010child.csv', '2010adult.csv',    ###
+###                                   '2010family.csv', '2010community.csv'          ###
+###                                                                                  ###
+###  Output file and Variables:                                                      ###
+###     'CFPS2010.RData' including four dataframes: 'df.children', 'df.family',      ###
+###                                   'df.community', 'df.individual'                ###
+###     Variables see notes in the code                                              ###
+###                                                                                  ###
+########################################################################################
+########################################################################################
+
 ######################## Start of the script ###########################
 ### clean the memory to avoid unnecessary errors:
 rm(list = ls())
@@ -22,7 +41,6 @@ options(scipen = 999)   # force R to output in decimal instead of scientifc noti
 options(digits=5)       # limit the number of reporting
 
 ### set directory to the folder of analytic data
-
 # Get the directory of the current R script
 curWD <- dirname(rstudioapi::getSourceEditorContext()$path)
 
@@ -33,18 +51,15 @@ setwd(curWD)
 if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r-project.org"); require(tidyverse)}
 if (!require(dplyr)) {install.packages("dplyr",repos = "http://cran.us.r-project.org"); require(dplyr)}
 if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
-library("psych")
-#library("dplyr")
-library("tidyverse")
 
 # read data
 # added fileEncoding to avoid junk text in the 1st colname
-dfc0 <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM")
-dfa0 <- read.csv("data/2010adult.csv", header=T, fileEncoding="UTF-8-BOM") 
-dff0 <- read.csv("data/2010family.csv", header=T, fileEncoding="UTF-8-BOM")
-dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  
+dfc0 <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 children's dataset
+dfa0 <- read.csv("data/2010adult.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 adults' dataset
+dff0 <- read.csv("data/2010family.csv", header=T, fileEncoding="UTF-8-BOM")#CFPS 2010 family' dataset
+dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  #CFPS 2010 community' dataset
 
-#extract related data according to SES 2010 codebook
+#extract related data (SES and mental health) according to SES 2010 codebook
 ##community 
 df.community <- dfcom0 %>%
   dplyr::select(###ID	
@@ -89,8 +104,9 @@ df.community <- dfcom0 %>%
 
 ##adult questionnaire-individual
 df.individual <- dfa0 %>%
-  dplyr::select(pid, fid, pid_f, pid_m,
-                qa1age,
+  dplyr::select(pid, fid, pid_f, pid_m, #pid, fid, pid of father, pid of mother
+                gender, #gender
+                qa1age, #age
                 #education
                 edu2010_t1_best,	#Best var of highest level of education attained at 2010
                 educ,	#Level of education (detailed)
@@ -120,13 +136,13 @@ df.individual <- dfa0 %>%
                 ###subjective SES
                 qm401,	#Income level in local area
                 qm402,	#Social status in local area
-                qq601, qq602,qq603,qq604,qq605,qq606,depression,#depression
+                qq601, qq602,qq603,qq604,qq605,qq606,depression, #depression questionnaire items (qq601-qq606); total score of depression
                 wordtest, mathtest) #cognitive ability
 
 ###family 
 df.family <- dff0 %>%
   dplyr::select(#id
-                fid,
+                fid, #fid
                 #family income
                 fsalary,	#Salary income
                 fshift,	#transfer income
@@ -213,6 +229,8 @@ df.children <- dfc0 %>%
                 cid,	#community id
                 pid_f,	#father id
                 pid_m,	#mother id
+                wa1age, #age
+                gender, #gender
                 ###mental health	
                 wn401,	#Feel depressed and cannot cheer up
                 wn402,	#Feel nervous
@@ -231,14 +249,8 @@ df.children <- dfc0 %>%
                 wb201,	#Child's frequency meeting parent(s) in the latest non-vacation month
                 tb6_a_f,	#Father living in the household (living with family)
                 tb6_a_m,	#Mother living in the household (living with family)
-                wz301,
-                wa1age)	#Interviewer Observation: Home environment indicates parents care about child's education)
+                wz301) #Interviewer Observation: Home environment indicates parents care about child's education	
 
 #save data as RData for futher analysis
 save(df.children, df.individual, df.community, df.family,
      file = 'CFPS2010.RData')
-#save(df.children, file = 'df.children.RData')
-#save(df.individual, file = 'df.individual.RData')
-#save(df.community, file = 'df.community.RData')
-#save(df.family, file = 'df.family.RData')
-
