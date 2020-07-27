@@ -96,7 +96,7 @@ if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org
 if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
 if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.us.r-project.org"); require(GPArotation)}
 if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
-if (!require(lessR)) {install.packages("spearmanCI",repos = "http://cran.us.r-project.org"); require(lessR)}
+if (!require(lessR)) {install.packages("lessR",repos = "http://cran.us.r-project.org"); require(lessR)}
 if (!require(lme4)) {install.packages("lme4",repos = "http://cran.us.r-project.org"); require(lme4)}
 if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
 
@@ -105,7 +105,7 @@ if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org
 # ---------------------------------------------------------------------------------------
 
 ############# 1.1 Prepare mental health variables of CPFS ##########
-## children's mental health variables
+## children mental health variables
 #load data
 load("df.CFPS_child.RData")
 #extract mental health variables
@@ -145,14 +145,14 @@ mental_CFPS <- df.CFPS_child %>%
   dplyr::mutate(depression = as.numeric(depression)) 
 
 #check score
-table(mental_CFPS$depression)
+table(mental_CFPS$depression) # hcp: is it normal to have negative scores here??
 
-############ 1.2 Correlation relationship between SES scores and mental health scores CFPS##############
+############ 1.2 Correlation relationship between SES scores and mental health scores CFPS ##############
 # import SES data
 load("SES_CFPS.RData")
 # merge all ordinal and continuous SES cfps and mental health 
-SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>%
-  #merge SES data with mental health data
+SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>% 
+  # merge SES data with mental health data
   dplyr::left_join(., mental_CFPS, by = "pid", all.x = TRUE) %>%
   #delet the column of pid 
   dplyr::select(-pid) %>%
@@ -160,7 +160,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
   dplyr::rename(dep = depression,
                 cog = cognition,
                 # composite SES 1-6
-                c1 = SES_betan_cfps, # hcp: we need to think about this part, make it scalable.
+                c1 = SES_betan_cfps, 
                 c2 = SES_moog_cfps, 
                 c3 = SES_jed_cfps, 
                 c4 = SES_mcder_cfps,
@@ -186,10 +186,10 @@ N_correlation <- N_variable_cfps*N_variable_cfps # number of correlations
 
 
 # determine the type of each of variable (dichotomous or ordinal)
-#create a data frame to store the result
+# create a data frame to store the result
 variable_type <- data_frame(variable = dimname,
                             type = as.character(NA)) 
-#determine the type of variable
+# determine the type of variable
 for (i in 1:N_variable_cfps) {
   var <- as.character(variable_type[i, "variable"])  #extract name of each column
   if(length(unique(na.omit(SES_mental_CFPS[,var]))) ==2){ # if the variable only have two values, then identify it as dichotomous 
@@ -201,7 +201,7 @@ variable_type
 
 #-------------cor matrix & p-value matrix CFPS-------------
 ## create correlation table for all the correlation relationship between variables
-#build an empty correlation table to store the results for the correlation relationship
+# build an empty correlation table to store the results for the correlation relationship
 Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_variable_cfps)),# first variable in the correlation relationship
                                 variable2 = as.character(rep(dimname, N_variable_cfps)),# second variable in the correlation relationship
                                 correlation = rep(NA, N_correlation), #correlation coefficient
@@ -220,28 +220,28 @@ for (i in 1:N_correlation) {
      Correlations_cfps[i, "p"] <- round(a$p.value, digits = 5)
      Correlations_cfps[i, "ci1"] <- NA
      Correlations_cfps[i, "ci2"] <- NA
-     # if both variables are dichonomous, use phi analysis
+     # if both variables are dichotomous, use phi analysis
      } else if (dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
        Correlations_cfps[i, "correlation"] <- phi(table(v1, v2))
        b <- cor.test(v1, v2, use = "complete.obs")                                       
        Correlations_cfps[i, "p"]<- round(b$p.value, digits = 5)
        Correlations_cfps[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
        Correlations_cfps[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
-       # if one variable is dichonomous and another is ordinal, use biserial correlation (first variable is dichotomous)
+       # if one variable is dichotomous and another is ordinal, use biserial correlation (first variable is dichotomous)
        } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
          Correlations_cfps[i, "correlation"] <- biserial.cor(v2, v1, use = "complete.obs", level = 2)
          c<-cor.test(v1, v2, use = "complete.obs", level = 2)
          Correlations_cfps[i, "p"] <- round(c$p.value, digits = 5)
          Correlations_cfps[i, "ci1"] <- round(c$conf.int[1],  digits = 5)
          Correlations_cfps[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
-         # same here, when second variable is dichonomous
+         # same here, when second variable is dichotomous
          } else if (dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) == 2 ){
            Correlations_cfps[i, "correlation"]<- biserial.cor(v1, v2, use = "complete.obs", level = 2)
            d<-cor.test(v1, v2, use = "complete.obs", level = 2)
            Correlations_cfps[i, "p"] <- round(d$p.value, digits = 5)
            Correlations_cfps[i, "ci1"] <- round(d$conf.int[1],  digits = 5)
            Correlations_cfps[i, "ci2"] <- round(d$conf.int[2],  digits = 5)
-           #chek if there is any variables left 
+           # check if there is any variables left 
            } else {
            Correlations_cfps[i, "correlation"] <- NA
            Correlations_cfps[i, "p"] <- NA
@@ -250,19 +250,19 @@ for (i in 1:N_correlation) {
          }
      #print(Correlations_cfps)
 }
-Correlations_cfps
+# Correlations_cfps
 
-#create correlation matrix from the correlation table
+# Create correlation matrix from the correlation table
 cormatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
   dplyr::select(-variable1) %>%
   as.matrix(.) %>%
-#naming the rows
-  `rownames<-`(colnames(.))
-#rearrange the matrix (put mental health variables first)
-cormatrix_cfps<- lessR::corReorder(R= cormatrix_cfps, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
+  `rownames<-`(colnames(.)) # naming the rows
+
+# Rearrange the matrix (put mental health variables first)
+cormatrix_cfps <- lessR::corReorder(R=cormatrix_cfps, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
 cormatrix_cfps
 
-#create p matrix
+# Create p matrix
 pmatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
   dplyr::select(-variable1) %>%
   as.matrix(.) %>%
@@ -274,7 +274,7 @@ pmatrix_cfps
 
 #-------------CI calculating-------------
 ## cor.test with spearman cannot calculate ci, calculate them separately 
-#calculate ci of spearman correlation for ordinal variables
+# calculate ci of spearman correlation for ordinal variables
 corrtest_spearman <-corr.test(SES_mental_CFPS[, variable_type[variable_type$type == "ordi",]$variable], y = NULL, use = "pairwise",method="spearman",adjust="holm", 
                      alpha=.05,ci=TRUE,minlength=5)
 #select rownames (correlation analysis pair of variables) for further pairing
@@ -317,10 +317,10 @@ Correlations_cfps_with_ci <- Correlations_cfps %>%
 #check ci table
 Correlations_cfps_with_ci
 
-#-------------plot CFPS-------------
+# -------------plot CFPS-------------
 ##draw plot
 #plot with mental health variables
-corrplot_CFPS<-corrplot.mixed(cormatrix_cfps, p.mat = pmatrix_cfps, insig = "blank",sig.level = 0.05,
+corrplot_CFPS <- corrplot.mixed(cormatrix_cfps, p.mat = pmatrix_cfps, insig = "blank",sig.level = 0.05,
                               cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
 #extract only SES variables
 cormatrix_cfps_ses <- cormatrix_cfps[3:13, 3:13]
@@ -328,8 +328,8 @@ pmatrix_cfps_ses <- pmatrix_cfps[3:13, 3:13]
 #plot only SES variables
 corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
-###############1.3 Calculate inter-rater correlation coefficient of all the SES variables###########
-#ICC
+############### 1.3 Calculate inter-rater correlation coefficient of all the SES variables###########
+# ICC
 # calculate z-score for all SES scores
 # build a table for z-scores
 z_score_CFPS <- SES_mental_CFPS[NA,]
@@ -337,16 +337,18 @@ z_score_CFPS <- SES_mental_CFPS[NA,]
 for(i in 1:N_SES_CFPS){
   var <- colnames(SES_mental_CFPS[i])
   z_score_CFPS[,i] <- (SES_mental_CFPS[,var] - mean(SES_mental_CFPS[,var], na.rm = TRUE))/sd(SES_mental_CFPS[,var], na.rm = TRUE)}
-#Two-way mixed effect model, absolute agreement, single measurement
+
+# Two-way mixed effect model, absolute agreement, single measurement
 ICC_CFPS_1 <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  drop_na() %>%
-  icc(., model = "twoway", type = "agreement", unit = "single")
-#Twoway mixed effect model, absolute agreement, average measurement
+  tidyr::drop_na() %>%
+  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+
+# Two-way mixed effect model, absolute agreement, average measurement
 ICC_CFPS_2 <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  drop_na() %>%
-  icc(., model = "twoway", type = "agreement", unit = "average")
+  tidyr::drop_na() %>%
+  irr::icc(., model = "twoway", type = "agreement", unit = "average")
 #check ICCs
 ICC_CFPS_1
 ICC_CFPS_2
