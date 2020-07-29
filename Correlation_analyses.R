@@ -316,26 +316,18 @@ corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, 
 # ICC
 # calculate z-score for all SES scores
 # build a table for z-scores
-z_score_CFPS <- SES_mental_CFPS[NA,]
+z_score_CFPS <- drop_na(SES_mental_CFPS)[NA,]
 # transfer the scores for each SES into z-score 
+SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS)
 for(i in 1:N_SES_CFPS){
   var <- colnames(SES_mental_CFPS[i])
-  z_score_CFPS[,i] <- (SES_mental_CFPS[,var] - mean(SES_mental_CFPS[,var], na.rm = TRUE))/sd(SES_mental_CFPS[,var], na.rm = TRUE)}
+  z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
 
-# Two-way mixed effect model, absolute agreement, single measurement
+# Two-way random effect model, absolute agreement, single measurement
 ICC_CFPS_1 <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  tidyr::drop_na() %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
-
-# Two-way mixed effect model, absolute agreement, average measurement
-ICC_CFPS_2 <- z_score_CFPS %>%
-  dplyr::select(1:(ncol(.)-2)) %>%
-  tidyr::drop_na() %>%
-  irr::icc(., model = "twoway", type = "agreement", unit = "average")
-# check ICCs
 ICC_CFPS_1
-ICC_CFPS_2
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------
@@ -515,24 +507,17 @@ corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses,
 ###############2.3 Calculate inter-rater correlation coefficient of all the SES variables (ICC)###########
 # calculate z-score for all SES scores
 # build a table for z-scores
-z_score_PSID <- SES_mental_PSID
+z_score_PSID <- drop_na(SES_mental_PSID)[NA,]
+
 # transfer the scores for each SES into z-score 
 for(i in 1:N_SES_PSID){
   var <- colnames(SES_mental_PSID[i])
-  z_score_PSID[,i] <- (SES_mental_PSID[,var] - mean(SES_mental_PSID[,var], na.rm = TRUE))/sd(SES_mental_PSID[,var], na.rm = TRUE)}
-# Two-way mixed effect model, absolute agreement, single measurement
+  z_score_PSID[,i] <- (drop_na(SES_mental_PSID)[,var] - mean(drop_na(SES_mental_PSID)[,var], na.rm = TRUE))/sd(drop_na(SES_mental_PSID)[,var], na.rm = TRUE)}
+# Two-way random effect model, absolute agreement, single measurement
 ICC_PSID_1 <- z_score_PSID %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  drop_na() %>%
   icc(., model = "twoway", type = "agreement", unit = "single")
-# Two-way mixed effect model, absolute agreement, average measurement
-ICC_PSID_2 <- z_score_PSID %>%
-  dplyr::select(1:(ncol(.)-2)) %>%
-  drop_na() %>%
-  icc(., model = "twoway", type = "agreement", unit = "average")
-# Check ICC scores
 ICC_PSID_1
-ICC_PSID_2
 
 # ---------------------------------------------------------------------------------------
 # ---------- 3.  Combine two plots into one--------------------------------------------
