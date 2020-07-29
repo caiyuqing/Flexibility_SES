@@ -318,7 +318,7 @@ corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, 
 # build a table for z-scores
 z_score_CFPS <- drop_na(SES_mental_CFPS)[NA,]
 # transfer the scores for each SES into z-score 
-SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS)
+SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
 for(i in 1:N_SES_CFPS){
   var <- colnames(SES_mental_CFPS[i])
   z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
@@ -510,9 +510,10 @@ corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses,
 z_score_PSID <- drop_na(SES_mental_PSID)[NA,]
 
 # transfer the scores for each SES into z-score 
+SES_mental_PSID_complete <- drop_na(SES_mental_PSID) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
 for(i in 1:N_SES_PSID){
   var <- colnames(SES_mental_PSID[i])
-  z_score_PSID[,i] <- (drop_na(SES_mental_PSID)[,var] - mean(drop_na(SES_mental_PSID)[,var], na.rm = TRUE))/sd(drop_na(SES_mental_PSID)[,var], na.rm = TRUE)}
+  z_score_PSID[,i] <- (SES_mental_PSID_complete[,var] - mean(SES_mental_PSID_complete[,var], na.rm = TRUE))/sd(SES_mental_PSID_complete[,var], na.rm = TRUE)}
 # Two-way random effect model, absolute agreement, single measurement
 ICC_PSID <- z_score_PSID %>%
   dplyr::select(1:(ncol(.)-2)) %>%
