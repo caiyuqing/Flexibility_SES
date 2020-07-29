@@ -324,10 +324,10 @@ for(i in 1:N_SES_CFPS){
   z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
 
 # Two-way random effect model, absolute agreement, single measurement
-ICC_CFPS_1 <- z_score_CFPS %>%
+ICC_CFPS <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
-ICC_CFPS_1
+ICC_CFPS
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------
@@ -514,10 +514,10 @@ for(i in 1:N_SES_PSID){
   var <- colnames(SES_mental_PSID[i])
   z_score_PSID[,i] <- (drop_na(SES_mental_PSID)[,var] - mean(drop_na(SES_mental_PSID)[,var], na.rm = TRUE))/sd(drop_na(SES_mental_PSID)[,var], na.rm = TRUE)}
 # Two-way random effect model, absolute agreement, single measurement
-ICC_PSID_1 <- z_score_PSID %>%
+ICC_PSID <- z_score_PSID %>%
   dplyr::select(1:(ncol(.)-2)) %>%
   icc(., model = "twoway", type = "agreement", unit = "single")
-ICC_PSID_1
+ICC_PSID
 
 # ---------------------------------------------------------------------------------------
 # ---------- 3.  Combine two plots into one--------------------------------------------
