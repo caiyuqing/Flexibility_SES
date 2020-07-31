@@ -377,7 +377,6 @@ N_variable_psid <- ncol(SES_mental_PSID) # number of all variables
 N_SES_PSID <- N_variable_psid- 2 # number of ses variables
 N_correlation <- N_variable_psid*N_variable_psid # number of correlations
 
-
 ## determine the type of each of variable (dichotomous or ordinal)
 # build an empty table to save the results
 variable_type <- data_frame(variable = dimname,
@@ -517,7 +516,7 @@ for(i in 1:N_SES_PSID){
 # Two-way random effect model, absolute agreement, single measurement
 ICC_PSID <- z_score_PSID %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  icc(., model = "twoway", type = "agreement", unit = "single")
+  irr::icc(., model = "twoway", type = "agreement", unit = "single")
 ICC_PSID
 
 # ---------------------------------------------------------------------------------------
@@ -532,7 +531,7 @@ opar<-par(no.readonly=T)
 par(mfrow=c(1,2))
 # CFPS
 corrplot.mixed(cormatrix_cfps, p.mat = pmatrix_cfps, insig = "blank",sig.level = 0.05,
-               cl.lim = c(-0.11, 1), tl.cex = 0.8, number.cex = 0.8)
+               cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
 mtext("Correlation matrix CFPS", side = 1, line = -1) # text
 # PSID
 corrplot.mixed(cormatrix_psid, p.mat = pmatrix_psid, insig = "blank", sig.level = 0.05,
@@ -572,5 +571,6 @@ table_ses_mental_psid_p<- pmatrix_psid[3:10, 1:2]
 table_ses_mental_psid
 table_ses_mental_psid_p
 
+save(cormatrix_cfps, cormatrix_psid, file = "correlation_matrix.RData")
 write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
 write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
