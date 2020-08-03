@@ -14,7 +14,7 @@
 ###  Purpose:                                                                                                  ###
 ###  Calculate the SES scores according to each method of the original fMRI studies                            ###
 ###                                                                                                            ###
-###  Code authors: Chuan-Peng Hu, PhD, Neuroimaging Center (NIC), Johannes Gutenberg                           ###  
+###  Code authors: HU Chuan-Peng, PhD, Neuroimaging Center (NIC), Johannes Gutenberg                           ###  
 ###                University Medical Center, 55131 Mainz, Germany;                                            ###
 ###                Yuqing Cai, Tsinghua University, 100086, China                                              ###
 ###                                                                                                            ###
@@ -163,7 +163,6 @@ summary(df.CFPS_child)
 # save the data of children (CFPS) as rdata for further processing
 save(df.CFPS_child, file = "df.CFPS_child.RData")
 
-
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Prepare the PSID data for later analysis--------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -300,102 +299,7 @@ table(moog_PSID$SES_moog_psid)
 
 ######## Yu,2018, not figured out yet ######
 ## We haven't consider this type of SES because the participants in Yu, 2018 were young adults instead of children as in other previous researches selected here
-#
-#
-## PCA
-## install.packages("FactoMineR")
-## install.packages("factoextra")
-#library(FactoMineR)
-#library(factoextra)
-#yu_pca_cfps <- yu_cfps %>%
-#  dplyr::select(ITN, edu_f_recode, edu_m_recode, sss)
-#yu_pca_cfps <- drop_na(yu_pca_cfps)
-#yu.pr_cfps<-PCA(yu_pca_cfps, scale.unit = TRUE, graph = TRUE)
-#get_eigenvalue(yu.pr_cfps)
-#fviz_eig(yu.pr_cfps)#scree plot
-#var <- get_pca_var(yu.pr_cfps) #sss shows opposite contribution (?)
-#var$coord
-#
-## calculate SES as first component (?PCA does not appear to be single component)
-#yu_cfps <- yu_cfps %>%
-#  dplyr::mutate(SES_yu_cfps = 0.71118313*ITN + 0.78339583*edu_f_recode + 0.81539907*edu_m_recode + (-0.04682041)*sss)
-#
-## psid
-## psid:only rp and sp have sss and parental education info
-## extract sp and rp 
-## reproduce Yu,2018 second young adult version first
-## subject here is rp and sp
-## import more data (education related)
-#yu_yadult_psid_rp <- df.psid %>%
-#  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
-#  dplyr::filter(ER34503 == 10) %>%
-#  dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
-#yu_yadult_psid_sp <- df.psid %>%
-#  dplyr::select(ER34503,ER34501,ER30002,ER32000,ER34504) %>% #relation to RP; fid; pid; sex;age
-#  dplyr::filter(ER34503 == 20) %>%
-#  dplyr::filter(ER34504 <= 25 &ER34504 >= 18)
-#names(yu_yadult_psid_rp)  <- c("relation_rp", "fid", "pid", "sex", "age")
-#names(yu_yadult_psid_sp)  <- c("relation_rp", "fid", "pid", "sex", "age")
-#
-## recode income
-#yu_psid_income <- df.psid %>%
-#  dplyr::select(ER34501,ER30002, ER71426)  %>% #fid, pid, total family income
-#  dplyr::mutate(income_cat = cut(ER71426, 
-#                                 breaks = quantile(df.psid$ER71426, probs = seq(0, 1, 1/9), na.rm= TRUE),
-#                                 labels = c("1", "2", "3", "4", "5", "6", "7", "8", "9")))%>% #recode family income into 9 groups
-#  dplyr::mutate(income_cat = as.numeric(income_cat)) #convert into numeric variable
-#names(yu_psid_income) <- c("fid", "pid", "fincome", "income_cat")
-#yu_psid_income <- merge(yu_psid_income, familysize_psid, by = "fid")
-#group_median <- yu_psid_income %>% 
-#  dplyr::group_by(income_cat) %>% #group income into 9 groups
-#  dplyr::summarise(group_median = median(fincome))
-#yu_psid_income <- merge(yu_psid_income, group_median, by= "income_cat") #merge income median with main data frame
-#yu_psid_income <- yu_psid_income %>%
-#  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%  #calculate poverty line according to family size
-#  dplyr::mutate(ITN = group_median/poverty) #calculate ITN: group_median divide poverty line
-#table(yu_psid_income$ITN) #check ITN
-#
-## parents' education
-#yu_psid_edu <- df.psid %>%
-#  dplyr::select(ER34501,ER30002,TA171981,TA171983) %>% #fid, pid, mother_edu, father_edu
-#  dplyr::mutate(edu_m_recode = cut(TA171981, breaks = c(-0.001, 0.5, 11.5, 12.5, 13.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6")),
-#                edu_f_recode = cut(TA171983, breaks = c(-0.001, 0.5, 11.5, 12.5, 13.5, 16.5,20), labels = c("1", "2", "3", "4", "5", "6"))) %>% #cut education into 6 groups: Noe of below (1):0; < high school (2):1-10; High scool (3):11-12; associate degree (4):13-14; bachelor's degree (5):14-16; Master's degree (6)&PhD/MD (7):17
-#  dplyr::mutate(edu_m_recode = as.numeric(edu_m_recode),
-#                edu_f_recode = as.numeric(edu_f_recode))
-#names(yu_psid_edu) <- c("fid", "pid", "mother_edu", "father_edu", "edu_m_recode", "edu_f_recode")
-#
-## sss
-#yu_psid_sss_rp <- df.psid%>%
-#  dplyr::select(ER34501,ER30002,ER70879) # fid,pid, sss_rp
-#yu_psid_sss_sp <- df.psid%>%
-#  dplyr::select(ER34501,ER30002,ER70741) # fid,pid, sss_sp
-#names(yu_psid_sss_rp) <- c("fid", "pid", "sss")
-#names(yu_psid_sss_sp) <- c("fid", "pid", "sss")
-#
-## merge
-## merge rp with rp sss
-#yu_yadult_psid_rp <-  merge(yu_yadult_psid_rp, yu_psid_sss_rp, by = c("fid", "pid"))
-#yu_yadult_psid_sp <-  merge(yu_yadult_psid_sp, yu_psid_sss_sp, by = c("fid", "pid"))
-##combine rp with sp
-#yu_yadult_psid <- rbind(yu_yadult_psid_rp, yu_yadult_psid_sp)
-#
-## merge with education and income
-#yu_yadult_psid <- merge(yu_yadult_psid,  yu_psid_income, by = c("fid", "pid"))
-#yu_yadult_psid <- merge(yu_yadult_psid, yu_psid_edu, by = c("fid", "pid"))
-#
-## PCA
-#yu_pca_psid <- yu_yadult_psid %>%
-#  dplyr::select(ITN, edu_f_recode, edu_m_recode, sss)
-#yu_pca_psid <- drop_na(yu_pca_psid)
-#yu.pr_psid<-PCA(yu_pca_psid, scale.unit = TRUE, graph = TRUE)
-#get_eigenvalue(yu.pr_psid)
-#fviz_eig(yu.pr_pid)#scree plot
-#var <- get_pca_var(yu.pr_psid)
-#var$coord
-## calculate SES as first component (?PCA does not appear to be single component)
-#yu_yadult_psid <- yu_yadult_psid %>%
-#  dplyr::mutate(SES_yu_psid = 0.5152558*ITN + 0.7833663*edu_f_recode + 0.81539907*edu_m_recode + (-0.04682041)*sss)
-#
+
 ########## Jednoróg,  2012 (CFPS) ##########
 # SES = mother's education * 4 + mother's occupation *7
 # mother's education: see 'Education & Occupation recode.xlsx'

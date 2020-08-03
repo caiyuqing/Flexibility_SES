@@ -21,11 +21,17 @@ df <- read.csv('ses_data.csv') %>%
 
 df_p <- df %>% dplyr::select(-1) %>%
         dplyr::select(Nation, everything()) %>%
-        dplyr::mutate_if(is.character,as.factor)
+        dplyr::mutate_if(is.character,as.factor) %>%
+        dplyr::rename(`Data source` =  Nation,
+                      `Age range` = Dev_stage,
+                      Dataset = Uni_data,
+                      `SES measures` = SES_Ver,
+                      `SES indicators`= SES_Types,
+                      `Data types` = Data_type)
 
 # grey flow but colored columns
 p1 <- df_p %>%
-        alluvial_wide(.,
+        easyalluvial::alluvial_wide(.,
                       col_vector_flow = 'grey',
                       col_vector_value = palette_filter( greys = F),
                       stratum_label_size = 1, 
@@ -33,15 +39,15 @@ p1 <- df_p %>%
                       colorful_fill_variable_stratum = F) #%>%
         # add_marginal_histograms(df_p)
 
-parcats::parcats(p1, marginal_histograms = FALSE, imp = TRUE, data_input = df_p)
+parcats::parcats(p1, marginal_histograms = FALSE, imp = TRUE, data_input = df_p, bundlecolors = FALSE)
 
 # using the first column to color the flow
 p2 <- df_p %>%
-        alluvial_wide(.,
+        easyalluvial::alluvial_wide(.,
                       fill_by = "first_variable",
                       # col_vector_flow = 'grey',
                       # col_vector_value = palette_filter( greys = F),
                       stratum_label_size = 1, 
                       stratum_width = 1/3,
                       colorful_fill_variable_stratum = T) 
-parcats::parcats(p2, marginal_histograms = FALSE, imp = TRUE, data_input = df_p)
+parcats::parcats(p2, marginal_histograms = FALSE, imp = TRUE, data_input = df_p, arrangement = 'freeform')
