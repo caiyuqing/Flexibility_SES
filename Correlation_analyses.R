@@ -14,7 +14,7 @@
 ###  Purpose:                                                                                                  ###
 ###  Calculate the correlations between the SES scores and mental health measurements                          ###
 ###                                                                                                            ###
-###  Code authors: Chuan-Peng Hu, PhD, Neuroimaging Center (NIC), Johannes Gutenberg                           ###  
+###  Code authors: HU Chuan-Peng, PhD, Neuroimaging Center (NIC), Johannes Gutenberg                           ###  
 ###                University Medical Center, 55131 Mainz, Germany;                                            ###
 ###                Yuqing Cai, Tsinghua University, 100086, China                                              ###
 ###                                                                                                            ###
@@ -106,12 +106,12 @@ if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org
 
 ############# 1.1 Prepare mental health variables of CPFS ##########
 ## children mental health variables
-# load data
-load("df.CFPS_child.RData")
+
+load("df.CFPS_child.RData") # load data
+
 # extract mental health variables
 mental_CFPS <- df.CFPS_child %>%   
-  dplyr::select(# from child dataframe
-                wn401,	# Feel depressed and cannot cheer up
+  dplyr::select(wn401,	# Feel depressed and cannot cheer up
                 wn402,	# Feel nervous
                 wn403,	# Feel agitated or upset and cannot remain calm 
                 wn404,	# Feel hopeless about the future 
@@ -127,7 +127,7 @@ mental_CFPS <- df.CFPS_child %>%
                 ### cognitive ability	
                 wordtest,	# word test
                 mathtest, # math test
-                pid) %>% # pid
+                pid) %>%  # pid
   dplyr::na_if(., -8) %>%   # set NA
   # calculate the total score of depression and cognition
   dplyr::mutate(depression1 = wn401+wn402+wn403+wn404+wn405+wn406, # from children's data frame
@@ -141,7 +141,7 @@ mental_CFPS <- df.CFPS_child %>%
 
 
 # check score
-table(mental_CFPS$depression) # hcp: is it normal to have negative scores here?? CYQ: I dont say any negative score here (?)
+table(mental_CFPS$depression)
 
 ############ 1.2 Correlation relationship between SES scores and mental health scores CFPS ##############
 # import SES data
@@ -172,7 +172,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
 dimname <- colnames(SES_mental_CFPS)
 dimname #see the names
 
-#extract number of SES and mental health variables
+# Extract number of SES and mental health variables
 N_variable_cfps <- ncol(SES_mental_CFPS) # all variables
 N_SES_CFPS <- N_variable_cfps - 2 # only SES variables
 N_correlation <- N_variable_cfps*N_variable_cfps # number of correlations 
@@ -189,8 +189,6 @@ for (i in 1:N_variable_cfps) {
     variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
 }
-# see data frame
-variable_type
 
 #-------------cor matrix & p-value matrix CFPS-------------
 ## create correlation table for all the correlation relationship between variables
@@ -253,7 +251,6 @@ cormatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2"
 
 # Rearrange the matrix (put mental health variables first)
 cormatrix_cfps <- lessR::corReorder(R=cormatrix_cfps, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
-cormatrix_cfps
 
 # Create p matrix
 pmatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
@@ -263,7 +260,6 @@ pmatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", 
   `rownames<-`(colnames(.))
 # rearrange the matrix (put mental health variables first)
 pmatrix_cfps<- lessR::corReorder(R= pmatrix_cfps, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
-pmatrix_cfps
 
 #-------------CI calculating-------------
 ## cor.test with spearman cannot calculate ci, calculate them separately 
@@ -272,19 +268,18 @@ corrtest_spearman <-corr.test(SES_mental_CFPS[, variable_type[variable_type$type
                      alpha=.05,ci=TRUE,minlength=5)
 # select rownames (correlation analysis pair of variables) for further pairing
 ci_spearman_name <- rownames(corrtest_spearman$ci)
-ci_spearman_name
+
 # create a column for data frame merge
 corrtest_spearman$ci$name_combine <- ci_spearman_name
+
 # because all correlations have two pairs, repeat the process
 corrtest_spearman$ci$name_combine2 <- ci_spearman_name
-# check the table
-corrtest_spearman$ci
+
 # create another ci table for the second merge
 corrtest_spearman_ci2<-corrtest_spearman$ci
 # rename the varibales 
 names(corrtest_spearman_ci2) <- c("lower2", "r2", "upper2", "p2", "name_combine","name_combine2")
-# check the table
-corrtest_spearman_ci2
+
 # combine all the confidence intervals into two columns (ci_upper and ci_lower)
 Correlations_cfps_with_ci <- Correlations_cfps %>%
   dplyr::mutate(name_combine = paste0(variable1, "-", variable2)) %>%  # create a column of name for merge in the original correlation table
@@ -298,8 +293,6 @@ Correlations_cfps_with_ci <- Correlations_cfps %>%
                                   ifelse(!is.na(lower), lower, lower2))) %>%
   dplyr::select(variable1, variable2, correlation, p, ci_lower, ci_upper) %>%  # select necessary columns
   dplyr::mutate(ci = paste0("[", round(ci_lower, digits = 4), ",", " ", round(ci_upper, digits= 4), "]")) # combine two columns of upper ci into one column
-# check ci table
-Correlations_cfps_with_ci
 
 # -------------plot CFPS-------------
 ## draw plot
@@ -327,7 +320,6 @@ for(i in 1:N_SES_CFPS){
 ICC_CFPS <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
-ICC_CFPS
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------
@@ -370,7 +362,6 @@ SES_mental_PSID <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
 
 # extract colnames of SES_mental_PSID
 dimname <- colnames(SES_mental_PSID)
-dimname # see the names
 
 # extract number of variable
 N_variable_psid <- ncol(SES_mental_PSID) # number of all variables
@@ -387,7 +378,6 @@ for (i in 1:N_variable_psid) {
     variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_PSID[,var]))) > 2){ # if the variable has more than two values, it is ordinal ('ordi")
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA}
 }
-variable_type
 
 # -----------------cor matrix & p-value matrix PSID--------------
 # build an empty data frame for correlation results
@@ -397,7 +387,6 @@ Correlations_psid <- data.frame(variable1 = rep(dimname, each = N_variable_psid)
                                 p = rep(NA, N_correlation),
                                 ci1 = rep(NA, N_correlation),
                                 ci2 = rep(NA, N_correlation)) 
-
 
 # calculating the correlations between varibles with different methods
 for (i in 1:N_correlation) {
@@ -444,7 +433,6 @@ for (i in 1:N_correlation) {
   }
   # print(Correlations_psid)
 }
-Correlations_psid
 
 ## transform correlation result into matrix
 cormatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
@@ -454,7 +442,6 @@ cormatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2"
 
 # rearrange the matrix (put mental health variables first)
 cormatrix_psid<- lessR::corReorder(R= cormatrix_psid, order = "manual", vars = c(dep, satis, c1, c2, c6, i1, i2, i3, e1, e2))
-cormatrix_psid
 
 ## transform p-value table into matrix
 pmatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
@@ -463,19 +450,18 @@ pmatrix_psid <- reshape2::dcast(Correlations_psid[, c("variable1", "variable2", 
   `rownames<-`(colnames(.))  # naming the rows
 # rearrange the matrix (put mental health variables first)
 pmatrix_psid<- lessR::corReorder(R= pmatrix_psid, order = "manual", vars = c(dep, satis, c1, c2, c6, i1, i2, i3, e1, e2))
-pmatrix_psid
 
 # -------------CI calculating PSID-------------
 ## cor.test with spearman cannot calculate ci, calculate them separately (same as CFPS)
 corrtest_spearman <-corr.test(SES_mental_PSID[,variable_type[variable_type$type == "ordi",]$variable], y = NULL, use = "pairwise",method="spearman",adjust="holm", 
                      alpha=.05,ci=TRUE,minlength=5)
-corrtest_spearman$ci
+
 ci_spearman_name <- rownames(corrtest_spearman$ci)
-ci_spearman_name
+
 corrtest_spearman$ci$name_combine <- ci_spearman_name
 corrtest_spearman$ci$name_combine2 <- ci_spearman_name
 corrtest_spearman_ci2<-corrtest_spearman$ci 
-corrtest_spearman_ci2
+
 names(corrtest_spearman_ci2) <- c("lower2", "r2", "upper2", "p2", "name_combine","name_combine2")
 Correlations_psid_with_ci <- Correlations_psid %>%
   dplyr::mutate(name_combine = paste0(variable1, "-", variable2)) %>%
@@ -489,16 +475,18 @@ Correlations_psid_with_ci <- Correlations_psid %>%
                                   ifelse(!is.na(lower), lower, lower2))) %>%
   dplyr::select(variable1, variable2, correlation, p, ci_lower, ci_upper) %>%
   dplyr::mutate(ci = paste0("[", round(ci_lower, digits = 4), ",", " ", round(ci_upper, digits= 4), "]"))
-Correlations_psid_with_ci
+
 Correlations_psid_with_ci[, c("variable1","variable2","correlation", "ci")]
 
 # -------------plot PSID-------------
 ## plot correlation of all the variables
 corrplot_PSID <-corrplot.mixed(cormatrix_psid, p.mat = pmatrix_psid, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
+
 # extract only SES variables
 cormatrix_psid_ses <-cormatrix_psid[3:10, 3:10]
 pmatrix_psid_ses <- pmatrix_psid[3:10, 3:10]
+
 # plot correlation of only SES variables
 corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses, insig = "blank", sig.level = 0.05,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
@@ -517,7 +505,6 @@ for(i in 1:N_SES_PSID){
 ICC_PSID <- z_score_PSID %>%
   dplyr::select(1:(ncol(.)-2)) %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
-ICC_PSID
 
 # ---------------------------------------------------------------------------------------
 # ---------- 3.  Combine two plots into one--------------------------------------------
@@ -529,6 +516,7 @@ ICC_PSID
 pdf("Correlational matrix.pdf",width=15,height=9)
 opar<-par(no.readonly=T)
 par(mfrow=c(1,2))
+
 # CFPS
 corrplot.mixed(cormatrix_cfps, p.mat = pmatrix_cfps, insig = "blank",sig.level = 0.05,
                cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
@@ -564,12 +552,9 @@ dev.off()
 # extract correlation between SES and mental health variables
 table_ses_mental_cfps <- cormatrix_cfps[3:13,1:2]
 table_ses_mental_cfps_p <-pmatrix_cfps[3:13,1:2]
-table_ses_mental_cfps
-table_ses_mental_cfps_p
+
 table_ses_mental_psid <- cormatrix_psid[3:10,1:2]
 table_ses_mental_psid_p<- pmatrix_psid[3:10, 1:2]
-table_ses_mental_psid
-table_ses_mental_psid_p
 
 save(cormatrix_cfps, cormatrix_psid, file = "correlation_matrix.RData")
 write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
