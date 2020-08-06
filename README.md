@@ -22,7 +22,7 @@ We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.
 ### Assess the flexibility and variability
 We used `Correlation_analyses.R` to quantify the variability caused by the flexibility. To visualize the flexibility, we used `Alluvial_Plot.r`, which may need further revision.
 
-![Fig. flexibility of SES measures](./Alluvial.png)
+![](./Alluvial.png)
 
 ##### Consistency between SES scores
 * All the SES scores are positively correlated but the strength vary from 0.17 to 0.99 (CFPS); from 0.43 to 0.95 (PSID).
