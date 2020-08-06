@@ -6,5 +6,4 @@ data/
 *.Ruserdata
 *.Rproj
 *.Rproj.user
-*.png
 .Rproj.user
