@@ -20,24 +20,23 @@ We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.
 * Output: two RData files containing all the SES measurements calculated of each participants (`SES_CFPS.RData`; `SES_PSID.RData`)
 
 ### Assess the flexibility and variability
-We used `Correlation_analyses.R` to quantify the variability caused by the flexibility. To visualize the flexibility, we used `SankeyPlot_trial.r`, which still needs further revision.
+We used `Correlation_analyses.R` to quantify the variability caused by the flexibility. To visualize the flexibility, we used `Alluvial_Plot.r`, which may need further revision.
 
-![Fig. flexibility of SES measures](Alluvial.png)
+![](./Alluvial.png)
 
-##### Correlation between SES scores
-* All the SES scores are positively correlated but the strength vary from R = 0.17 to R = 0.99 (CFPS); R = 0.43 to R = 0.95
+##### Consistency between SES scores
+* All the SES scores are positively correlated but the strength vary from 0.17 to 0.99 (CFPS); from 0.43 to 0.95 (PSID).
 
-###### ICC
-We used Intra-Class Correlation (Two-way random effect model for single measurement agreement) to quantify the consistency between different SES scores. In this way, we view each way of calculating SES as the rating of a "rater", and ICC can estimate how consistent are these "raters" are. 
+* We used Intra-Class Correlation (Two-way random effect model for single measurement agreement) to quantify the consistency between different SES scores. In this way, we view each way of calculating SES as the rating of a "rater", and ICC can estimate how consistent are these "raters". 
 
-* CFPS: 
+  * CFPS: 0.588, 95%CI [0.572, 0.604]
 
-* PSID: . 
+  * PSID: 0.623, 95%CI [0.608, 0.638]. 
 
 ##### Variability in effect size caused by SES measurement flexibility
 
-We used a few surrogate target variable to estimate the variability.
+We used a few surrogate target variables to estimate the variability brought by flexibility in measuring SES.
 
-* CFPS: The correlation between different SES scores and depression score varied from XX to XX; between SES scores and cognitive ability varied from XX to XX.
+* CFPS: The correlation coefficients between different SES scores and depression scores varied from -0.01 [-0.0415, 0.0196] to 0.03312 [0.0049, 0.0613]; between SES scores and cognitive ability varied from 0.09 [0.0603, 0.1209] to 0.27 [0.2375, 0.3023] .
 
-* PSID: The correlation between different SES scores and depression score varied from XX to XX; between SES scores and life satification varied from XX to XX.
+* PSID: The correlation between different SES scores and depression score varied from 0.11 [0.0548, 0.1437] to 0.18 [0.1395, 0.2102]; between SES scores and life satification varied from 0.04 [-0.0122, 0.0767] to 0.19 [0.1594, 0.2295].
