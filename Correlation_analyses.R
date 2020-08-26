@@ -99,7 +99,6 @@ if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-p
 if (!require(lessR)) {install.packages("lessR",repos = "http://cran.us.r-project.org"); require(lessR)}
 if (!require(lme4)) {install.packages("lme4",repos = "http://cran.us.r-project.org"); require(lme4)}
 if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
-
 # ---------------------------------------------------------------------------------------
 # ---------- 1.  Correlation analysis of CFPS--------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -320,6 +319,30 @@ for(i in 1:N_SES_CFPS){
 ICC_CFPS <- z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
+ICC_CFPS
+
+# use lme4
+ICC2 <- SES_mental_CFPS_complete %>%
+  mutate(ID = 1:2186) %>%
+  dplyr::select(-dep, -cog)
+data_long <- gather(ICC2, SES, score,  c1:e2, factor_key=TRUE)
+d <- data_long %>% 
+  group_by(SES) %>%
+  mutate(zscore = (score - mean(score))/sd(score)) %>% 
+  ungroup() 
+
+# model 1 (two variance)
+library(lme4)
+m1 <- lme4::lmer(zscore ~ 1 +  (1|ID)+(1|SES), data=d)
+VarCorr(m1)
+#ICC
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+
+# model 2 (one-way model, same result as irr)
+m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
+VarCorr(m2)
+#ICC
+data.frame(VarCorr(m2))$vcov[1]/(data.frame(VarCorr(m2))$vcov[1]+data.frame(VarCorr(m2))$vcov[2])
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------
