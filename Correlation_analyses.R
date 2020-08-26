@@ -326,17 +326,30 @@ ICC2 <- SES_mental_CFPS_complete %>%
   mutate(ID = 1:2186) %>%
   dplyr::select(-dep, -cog)
 data_long <- gather(ICC2, SES, score,  c1:e2, factor_key=TRUE)
+
+# way 1 of standardizing the data
 d <- data_long %>% 
   group_by(SES) %>%
   mutate(zscore = (score - mean(score))/sd(score)) %>% 
   ungroup() 
 
+# way 2 of standardizing the data
+d2 <- data_long %>% 
+  group_by(SES) %>%
+  mutate(zscore = score/sd(score)) %>% 
+  ungroup() 
+
 # model 1 (two variance)
 library(lme4)
-m1 <- lme4::lmer(zscore ~ 1 +  (1|ID)+(1|SES), data=d)
-VarCorr(m1)
-#ICC
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
+m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
+
+VarCorr(m1_2)
+
+m_fits <- allFit(m1_2)
+
+# ICC
+data.frame(VarCorr(m1_2))$vcov[2]/(data.frame(VarCorr(m1_2))$vcov[1]+data.frame(VarCorr(m1_2))$vcov[2]+data.frame(VarCorr(m1_2))$vcov[3])
 
 # model 2 (one-way model, same result as irr)
 m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
