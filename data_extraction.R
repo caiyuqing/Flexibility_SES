@@ -54,10 +54,18 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 
 # read data
 # added fileEncoding to avoid junk text in the 1st colname
-dfc0 <- read.csv("data/2010child.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 children's dataset
-dfa0 <- read.csv("data/2010adult.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 adults' dataset
-dff0 <- read.csv("data/2010family.csv", header=T, fileEncoding="UTF-8-BOM")#CFPS 2010 family' dataset
-dfcom0 <- read.csv("data/2010community.csv", header= T, fileEncoding="UTF-8-BOM")  #CFPS 2010 community' dataset
+dfc0 <- read.csv("data/2010child_new.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 children's dataset
+dfa0 <- read.csv("data/2010adult_new.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 adults' dataset
+dff0 <- read.csv("data/2010family_new.csv", header=T, fileEncoding="UTF-8-BOM")#CFPS 2010 family' dataset
+dfcom0 <- read.csv("data/2010community_new.csv", header= T, fileEncoding="UTF-8-BOM")  #CFPS 2010 community' dataset
+dffr0 <- read.csv("data/2010familyroster_new.csv", header =T, fileEncoding = "UTF-8-BOM")
+
+# convert all the column names to lower cases
+names(dfc0)<- tolower(names(dfc0))
+names(dfa0)<- tolower(names(dfa0))
+names(dff0)<- tolower(names(dff0))
+names(dfcom0)<- tolower(names(dfcom0))
+names(dffr0)<- tolower(names(dffr0))
 
 # extract related data (SES and mental health) according to SES 2010 codebook
 ## community 
@@ -108,9 +116,11 @@ df.individual <- dfa0 %>%
                 gender, # gender
                 qa1age, # age
                 # education
-                edu2010_t1_best,	# Best var of highest level of education attained at 2010
-                educ,	# Level of education (detailed)
-                eduy2010,	# Best var of years of schooling completed
+                cfps2010edu_best,# highest level of education (completed): with 8 levels
+                cfps2010eduy_best, # education year: 0-22
+                cfps2010sch_best, # with 8 levels (for those who not finish schooling)
+                feduc, # education level of father 
+                meduc, # education level of mother (same coding as educ)
                 # individual income
                 income,	# personal income
                 qk101,	# Average monthly wage/salary last year (yuan)
@@ -140,14 +150,19 @@ df.individual <- dfa0 %>%
                 wordtest, mathtest) # cognitive ability
 
 ### family 
+colnames(dff0)
+summary(dff0$famin)
 df.family <- dff0 %>%
   dplyr::select(# id
                 fid, # fid
                 # family income
-                fsalary,	# Salary income
-                fshift,	  # transfer income
-                fincome,	# Total family income
-                finc_per,	# Per capita family income
+                urban, # indicator of urban or rural area
+                familysize, #family size
+                faminc,# total family income (adjusted) = finc+welfare+fproperty+firm+felse+inc_agri
+                faminc_net, # total family income (adjusted, net) = finc+welfare+fproperty+firm+felse+net_agri
+                faminc_net_old, # total family income (not adjusted, net) = finc+welfare+fproperty+firm+felse+max(fk5,fk3-fk4)
+                faminc_old, # total family income (not adjusted) = finc+welfare+fproperty+firm+felse+fk3
+                finc, # family income (salary)
                 inc_agri,	# Adjusted total agricultural income
                 net_agri,	# Adjusted net agricultural income
                 finc,	# Wage income
@@ -238,6 +253,11 @@ df.children <- dfc0 %>%
                 wn404,	# Feel hopeless about the future 
                 wn405,	# Feel that everything is difficult 
                 wn406,	# Think life is meaningless 
+                cfps2010edu_best, # highest level of education: with 8 levels
+                cfps2010eduy_best, # educational years
+                cfps2010sch_best, # with 8 levels (for those who not finish schooling)
+                feduc, # education level of father (same coding as educ)
+                meduc, # education level of mother (same coding as educ)
                 ### cognitive ability	
                 wordtest,	
                 mathtest,	
@@ -250,7 +270,6 @@ df.children <- dfc0 %>%
                 tb6_a_f,	# Father living in the household (living with family)
                 tb6_a_m,	# Mother living in the household (living with family)
                 wz301) # Interviewer Observation: Home environment indicates parents care about child's education	
-
 # save data as RData for futher analysis
 save(df.children, df.individual, df.community, df.family,
      file = 'CFPS2010.RData')

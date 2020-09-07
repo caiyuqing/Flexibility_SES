@@ -189,6 +189,7 @@ for (i in 1:N_variable_cfps) {
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
 }
 
+
 #-------------cor matrix & p-value matrix CFPS-------------
 ## create correlation table for all the correlation relationship between variables
 # build an empty correlation table to store the results for the correlation relationship
@@ -304,58 +305,189 @@ pmatrix_cfps_ses <- pmatrix_cfps[3:13, 3:13]
 # plot only SES variables
 corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
                               cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+
 ############### 1.3 Calculate inter-rater correlation coefficient of all the SES variables###########
-# ICC
-# calculate z-score for all SES scores
-# build a table for z-scores
-z_score_CFPS <- drop_na(SES_mental_CFPS)[NA,]
-# transfer the scores for each SES into z-score 
+## ICC
+## calculate z-score for all SES scores
+## build a table for z-scores
+#z_score_CFPS <- drop_na(SES_mental_CFPS)[NA,]
+## transfer the scores for each SES into z-score 
 SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
-for(i in 1:N_SES_CFPS){
-  var <- colnames(SES_mental_CFPS[i])
-  z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
+#for(i in 1:N_SES_CFPS){
+#  var <- colnames(SES_mental_CFPS[i])
+#  z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
+## Two-way random effect model, absolute agreement, single measurement
+#ICC_CFPS <- z_score_CFPS %>%
+#  dplyr::select(1:(ncol(.)-2)) %>%
+#  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+#ICC_CFPS
+#
+##### calculate the index that is similar to icc
+## standarize the data using "subtracting the minimum and dividing by the maximum"
+#standard_CFPS <- drop_na(SES_mental_CFPS)[NA,]
+#for(i in 1:N_SES_CFPS){
+#  var <- colnames(SES_mental_CFPS[i])
+#  standard_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/max(SES_mental_CFPS_complete[,var])}
+#standard_CFPS
+#
+## ICC using the irr package
+#ICC_CFPS <- standard_CFPS %>%
+#  dplyr::select(1:(ncol(.)-2))  %>%
+#  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+#ICC_CFPS # 0.066
 
-# Two-way random effect model, absolute agreement, single measurement
-ICC_CFPS <- z_score_CFPS %>%
-  dplyr::select(1:(ncol(.)-2)) %>%
-  irr::icc(., model = "twoway", type = "agreement", unit = "single")
-ICC_CFPS
-
-# use lme4
+# ICC use lme4
 ICC2 <- SES_mental_CFPS_complete %>%
   mutate(ID = 1:2186) %>%
   dplyr::select(-dep, -cog)
 data_long <- gather(ICC2, SES, score,  c1:e2, factor_key=TRUE)
 
-# way 1 of standardizing the data
-d <- data_long %>% 
-  group_by(SES) %>%
-  mutate(zscore = (score - mean(score))/sd(score)) %>% 
-  ungroup() 
+## way 1 of standardizing the data
+#d <- data_long %>% 
+#  group_by(SES) %>%
+#  mutate(zscore = (score - mean(score))/sd(score)) %>% 
+#  ungroup() 
+#
+## way 2 of standardizing the data
+#d2 <- data_long %>% 
+#  group_by(SES) %>%
+#  mutate(zscore = score/sd(score)) %>% 
+#  ungroup() 
 
-# way 2 of standardizing the data
-d2 <- data_long %>% 
+# current way of standardizing the data
+d <- data_long %>%
   group_by(SES) %>%
-  mutate(zscore = score/sd(score)) %>% 
-  ungroup() 
-
+  dplyr::mutate(standard = (score-min(score))/max(score)) 
 # model 1 (two variance)
 library(lme4)
-m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
-m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
+#m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
+#m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
+m1 <- lme4::lmer(standard ~ 1 + (1|ID) + (1|SES) , data=d)
 
-VarCorr(m1_2)
-
-m_fits <- allFit(m1_2)
+data.frame(VarCorr(m1))
+VarCorr(m1)
+m_fits <- allFit(m1)
 
 # ICC
-data.frame(VarCorr(m1_2))$vcov[2]/(data.frame(VarCorr(m1_2))$vcov[1]+data.frame(VarCorr(m1_2))$vcov[2]+data.frame(VarCorr(m1_2))$vcov[3])
+#data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+#data.frame(VarCorr(m1_2))$vcov[2]/(data.frame(VarCorr(m1_2))$vcov[1]+data.frame(VarCorr(m1_2))$vcov[2]+data.frame(VarCorr(m1_2))$vcov[3])
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
-# model 2 (one-way model, same result as irr)
-m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
-VarCorr(m2)
-#ICC
-data.frame(VarCorr(m2))$vcov[1]/(data.frame(VarCorr(m2))$vcov[1]+data.frame(VarCorr(m2))$vcov[2])
+
+## model 2 (one-way model, same result as irr)
+#m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
+#VarCorr(m2)
+##ICC
+#data.frame(VarCorr(m2))$vcov[1]/(data.frame(VarCorr(m2))$vcov[1]+data.frame(VarCorr(m2))$vcov[2])
+#
+#m2_3 <- lme4::lmer(standard ~ 1 +  (1|ID), data=d3)
+#VarCorr(m2_3)
+##ICC
+#data.frame(VarCorr(m2_3))$vcov[1]/(data.frame(VarCorr(m2_3))$vcov[1]+data.frame(VarCorr(m2_3))$vcov[2])
+
+#------------------Correlation relationship between standardized SES score-----------------
+# correlation matrix of standardized data
+standard_CFPS <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/max(SES_mental_CFPS_complete[,var])}
+standard_CFPS_SES <- standard_CFPS[1:11]
+
+# Extract colnames of SES_mental_CFPS
+dimname <- colnames(standard_CFPS_SES)
+dimname #see the names
+
+# Extract number of SES and mental health variables
+N_SES_CFPS <- N_variable_cfps - 2 # only SES variables
+N_correlation <- N_SES_CFPS*N_SES_CFPS # number of correlations 
+
+# determine the type of each of variable (dichotomous or ordinal)
+# create a data frame to store the result
+variable_type <- data_frame(variable = dimname,
+                            type = as.character(NA)) 
+# determine the type of variable
+for (i in 1:N_SES_CFPS) {
+  var <- as.character(variable_type[i, "variable"])  #extract name of each column
+  if(length(unique(na.omit(standard_CFPS_SES[,var]))) ==2){ # if the variable only have two values, then identify it as dichotomous 
+    variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
+      variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
+}
+
+#-------------cor matrix & p-value matrix CFPS standard-------------
+## create correlation table for all the correlation relationship between variables
+# build an empty correlation table to store the results for the correlation relationship
+Correlations_cfps_standard <- data.frame(variable1 = as.character(rep(dimname, each = N_SES_CFPS)),# first variable in the correlation relationship
+                                         variable2 = as.character(rep(dimname, N_SES_CFPS)),# second variable in the correlation relationship
+                                         correlation = rep(NA, N_correlation), # correlation coefficient
+                                         p = rep(NA, N_correlation), # p-value
+                                         ci1 = rep(NA, N_correlation),# confidence interval (lower)
+                                         ci2 = rep(NA, N_correlation)) # confidence interval (upper)
+
+# calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
+for (i in 1:N_correlation) {
+  v1 <- standard_CFPS_SES %>% dplyr::select(as.character(Correlations_cfps_standard[i, "variable1"])) %>% dplyr::pull() # extract first variable in the correlation analysis
+  v2 <- standard_CFPS_SES %>% dplyr::select(as.character(Correlations_cfps_standard[i, "variable2"])) %>% dplyr::pull() # extract second variable in the correlation analysis
+  # if both variables are ordinal, use Spearsman
+  if(dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) > 2){
+    a <- cor.test(v1, v2, method = "spearman", exact = FALSE)
+    Correlations_cfps_standard[i, "correlation"]<- a$estimate
+    Correlations_cfps_standard[i, "p"] <- round(a$p.value, digits = 5)
+    Correlations_cfps_standard[i, "ci1"] <- NA
+    Correlations_cfps_standard[i, "ci2"] <- NA
+    # if both variables are dichotomous, use phi analysis
+  } else if (dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
+    Correlations_cfps_standard[i, "correlation"] <- phi(table(v1, v2))
+    b <- cor.test(v1, v2, use = "complete.obs")                                       
+    Correlations_cfps_standard[i, "p"]<- round(b$p.value, digits = 5)
+    Correlations_cfps_standard[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
+    Correlations_cfps_standard[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
+    # if one variable is dichotomous and another is ordinal, use biserial correlation (first variable is dichotomous)
+  } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
+    Correlations_cfps_standard[i, "correlation"] <- biserial.cor(v2, v1, use = "complete.obs", level = 2)
+    c<-cor.test(v1, v2, use = "complete.obs", level = 2)
+    Correlations_cfps_standard[i, "p"] <- round(c$p.value, digits = 5)
+    Correlations_cfps_standard[i, "ci1"] <- round(c$conf.int[1],  digits = 5)
+    Correlations_cfps_standard[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
+    # same here, when second variable is dichotomous
+  } else if (dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) == 2 ){
+    Correlations_cfps_standard[i, "correlation"]<- biserial.cor(v1, v2, use = "complete.obs", level = 2)
+    d<-cor.test(v1, v2, use = "complete.obs", level = 2)
+    Correlations_cfps_standard[i, "p"] <- round(d$p.value, digits = 5)
+    Correlations_cfps_standard[i, "ci1"] <- round(d$conf.int[1],  digits = 5)
+    Correlations_cfps_standard[i, "ci2"] <- round(d$conf.int[2],  digits = 5)
+    # check if there is any variables left 
+  } else {
+    Correlations_cfps_standard[i, "correlation"] <- NA
+    Correlations_cfps_standard[i, "p"] <- NA
+    Correlations_cfps_standard[i, "ci1"] <- NA
+    Correlations_cfps_standard[i, "ci2"] <- NA
+  }
+  # print(Correlations_cfps)
+}
+Correlations_cfps_standard
+
+# Create correlation matrix from the correlation table
+cormatrix_cfps_standard <- reshape2::dcast(Correlations_cfps_standard[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
+  dplyr::select(-variable1) %>%
+  as.matrix(.) %>%
+  `rownames<-`(colnames(.)) # naming the rows
+# Rearrange the matrix (same as before)
+cormatrix_cfps_standard <- lessR::corReorder(R=cormatrix_cfps_standard, order = "manual", vars = c(c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
+
+# Create p matrix
+pmatrix_cfps_standard <- reshape2::dcast(Correlations_cfps_standard[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
+  dplyr::select(-variable1) %>%
+  as.matrix(.) %>%
+  # naming the rows
+  `rownames<-`(colnames(.))
+# rearrange the matrix (same as before)
+pmatrix_cfps_standard<- lessR::corReorder(R= pmatrix_cfps_standard, order = "manual", vars = c(c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
+# -------------plot CFPS standardized-------------
+## draw plot
+# plot with mental health variables
+corrplot_CFPS_SES_standard <- corrplot.mixed(cormatrix_cfps_standard, p.mat = pmatrix_cfps_standard, insig = "blank",sig.level = 0.05,
+                                cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------
@@ -528,19 +660,185 @@ corrplot_PSID_SES <-corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses,
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ###############2.3 Calculate inter-rater correlation coefficient of all the SES variables (ICC)###########
-# calculate z-score for all SES scores
-# build a table for z-scores
-z_score_PSID <- drop_na(SES_mental_PSID)[NA,]
-
-# transfer the scores for each SES into z-score 
+## calculate z-score for all SES scores
+## build a table for z-scores
+#z_score_PSID <- drop_na(SES_mental_PSID)[NA,]
+#
+## transfer the scores for each SES into z-score 
 SES_mental_PSID_complete <- drop_na(SES_mental_PSID) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
+#for(i in 1:N_SES_PSID){
+#  var <- colnames(SES_mental_PSID[i])
+#  z_score_PSID[,i] <- (SES_mental_PSID_complete[,var] - mean(SES_mental_PSID_complete[,var], na.rm = TRUE))/sd(SES_mental_PSID_complete[,var], na.rm = TRUE)}
+## Two-way random effect model, absolute agreement, single measurement
+#ICC_PSID <- z_score_PSID %>%
+#  dplyr::select(1:(ncol(.)-2)) %>%
+#  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+##### calculate the index that is similar to icc
+## standarize the data using "subtracting the minimum and dividing by the maximum"
+#standard_PSID <- drop_na(SES_mental_PSID)[NA,]
+#for(i in 1:N_SES_PSID){
+#  var <- colnames(SES_mental_PSID[i])
+#  standard_PSID[,i] <- (SES_mental_PSID_complete[,var] - min(SES_mental_PSID_complete[,var]))/max(SES_mental_PSID_complete[,var])}
+#standard_PSID
+#
+## ICC using the irr package
+#ICC_PSID <- standard_PSID %>%
+#  dplyr::select(1:(ncol(.)-2))  %>%
+#  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+#ICC_PSID 
+
+# ICC use lme4
+ICC2 <- SES_mental_PSID_complete %>%
+  mutate(ID = 1:nrow(SES_mental_PSID_complete)) %>%
+  dplyr::select(-dep, -satis)
+data_long <- gather(ICC2, SES, score,  c1:e2, factor_key=TRUE)
+
+## way 1 of standardizing the data
+#d <- data_long %>% 
+#  group_by(SES) %>%
+#  mutate(zscore = (score - mean(score))/sd(score)) %>% 
+#  ungroup() 
+#
+## way 2 of standardizing the data
+#d2 <- data_long %>% 
+#  group_by(SES) %>%
+#  mutate(zscore = score/sd(score)) %>% 
+#  ungroup() 
+
+# current way of standardizing the data
+d <- data_long %>%
+  group_by(SES) %>%
+  dplyr::mutate(standard = (score-min(score))/max(score)) 
+# model 1 (two variance)
+library(lme4)
+#m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
+#m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
+m1 <- lme4::lmer(standard ~ 1 + (1|ID) + (1|SES) , data=d)
+
+data.frame(VarCorr(m1))
+VarCorr(m1)
+m_fits <- allFit(m1)
+
+# ICC
+#data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+#data.frame(VarCorr(m1_2))$vcov[2]/(data.frame(VarCorr(m1_2))$vcov[1]+data.frame(VarCorr(m1_2))$vcov[2]+data.frame(VarCorr(m1_2))$vcov[3])
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+#0.90772
+
+## model 2 (one-way model, same result as irr)
+#m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
+#VarCorr(m2)
+##ICC
+#data.frame(VarCorr(m2))$vcov[1]/(data.frame(VarCorr(m2))$vcov[1]+data.frame(VarCorr(m2))$vcov[2])
+#
+#m2_3 <- lme4::lmer(standard ~ 1 +  (1|ID), data=d3)
+#VarCorr(m2_3)
+##ICC
+#data.frame(VarCorr(m2_3))$vcov[1]/(data.frame(VarCorr(m2_3))$vcov[1]+data.frame(VarCorr(m2_3))$vcov[2])
+
+#------------------Correlation relationship between standardized SES score-----------------
+# correlation matrix of standardized data
+standard_PSID <- drop_na(SES_mental_PSID)[NA,]
 for(i in 1:N_SES_PSID){
   var <- colnames(SES_mental_PSID[i])
-  z_score_PSID[,i] <- (SES_mental_PSID_complete[,var] - mean(SES_mental_PSID_complete[,var], na.rm = TRUE))/sd(SES_mental_PSID_complete[,var], na.rm = TRUE)}
-# Two-way random effect model, absolute agreement, single measurement
-ICC_PSID <- z_score_PSID %>%
-  dplyr::select(1:(ncol(.)-2)) %>%
-  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+  standard_PSID[,i] <- (SES_mental_PSID_complete[,var] - min(SES_mental_PSID_complete[,var]))/max(SES_mental_PSID_complete[,var])}
+standard_PSID_SES <- standard_PSID[1:(ncol(standard_PSID)-2)]
+
+# Extract colnames of SES_mental_PSID
+dimname <- colnames(standard_PSID_SES)
+dimname #see the names
+
+# Extract number of SES and mental health variables
+N_SES_PSID <- N_variable_psid - 2 # only SES variables
+N_correlation <- N_SES_PSID*N_SES_PSID # number of correlations 
+
+# determine the type of each of variable (dichotomous or ordinal)
+# create a data frame to store the result
+variable_type <- data_frame(variable = dimname,
+                            type = as.character(NA)) 
+# determine the type of variable
+for (i in 1:N_SES_PSID) {
+  var <- as.character(variable_type[i, "variable"])  #extract name of each column
+  if(length(unique(na.omit(standard_CFPS_SES[,var]))) ==2){ # if the variable only have two values, then identify it as dichotomous 
+    variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_PSID[,var]))) > 2){
+      variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
+}
+
+#-------------cor matrix & p-value matrix PSID standard-------------
+## create correlation table for all the correlation relationship between variables
+# build an empty correlation table to store the results for the correlation relationship
+Correlations_psid_standard <- data.frame(variable1 = as.character(rep(dimname, each = N_SES_PSID)),# first variable in the correlation relationship
+                                         variable2 = as.character(rep(dimname, N_SES_PSID)),# second variable in the correlation relationship
+                                         correlation = rep(NA, N_correlation), # correlation coefficient
+                                         p = rep(NA, N_correlation), # p-value
+                                         ci1 = rep(NA, N_correlation),# confidence interval (lower)
+                                         ci2 = rep(NA, N_correlation)) # confidence interval (upper)
+
+# calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
+for (i in 1:N_correlation) {
+  v1 <- standard_PSID_SES %>% dplyr::select(as.character(Correlations_psid_standard[i, "variable1"])) %>% dplyr::pull() # extract first variable in the correlation analysis
+  v2 <- standard_PSID_SES %>% dplyr::select(as.character(Correlations_psid_standard[i, "variable2"])) %>% dplyr::pull() # extract second variable in the correlation analysis
+  # if both variables are ordinal, use Spearsman
+  if(dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) > 2){
+    a <- cor.test(v1, v2, method = "spearman", exact = FALSE)
+    Correlations_psid_standard[i, "correlation"]<- a$estimate
+    Correlations_psid_standard[i, "p"] <- round(a$p.value, digits = 5)
+    Correlations_psid_standard[i, "ci1"] <- NA
+    Correlations_psid_standard[i, "ci2"] <- NA
+    # if both variables are dichotomous, use phi analysis
+  } else if (dplyr::n_distinct(v1, na.rm = T) == 2 && dplyr::n_distinct(v2, na.rm = T) == 2){
+    Correlations_psid_standard[i, "correlation"] <- phi(table(v1, v2))
+    b <- cor.test(v1, v2, use = "complete.obs")                                       
+    Correlations_psid_standard[i, "p"]<- round(b$p.value, digits = 5)
+    Correlations_psid_standard[i, "ci1"] <- round(b$conf.int[1],  digits = 5)
+    Correlations_psid_standard[i, "ci2"] <- round(b$conf.int[2],  digits = 5)
+    # if one variable is dichotomous and another is ordinal, use biserial correlation (first variable is dichotomous)
+  } else if (dplyr::n_distinct(v1, na.rm = T) == 2  &&  dplyr::n_distinct(v2, na.rm = T) > 2){
+    Correlations_psid_standard[i, "correlation"] <- biserial.cor(v2, v1, use = "complete.obs", level = 2)
+    c<-cor.test(v1, v2, use = "complete.obs", level = 2)
+    Correlations_psid_standard[i, "p"] <- round(c$p.value, digits = 5)
+    Correlations_psid_standard[i, "ci1"] <- round(c$conf.int[1],  digits = 5)
+    Correlations_psid_standard[i, "ci2"] <- round(c$conf.int[2],  digits = 5)
+    # same here, when second variable is dichotomous
+  } else if (dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) == 2 ){
+    Correlations_psid_standard[i, "correlation"]<- biserial.cor(v1, v2, use = "complete.obs", level = 2)
+    d<-cor.test(v1, v2, use = "complete.obs", level = 2)
+    Correlations_psid_standard[i, "p"] <- round(d$p.value, digits = 5)
+    Correlations_psid_standard[i, "ci1"] <- round(d$conf.int[1],  digits = 5)
+    Correlations_psid_standard[i, "ci2"] <- round(d$conf.int[2],  digits = 5)
+    # check if there is any variables left 
+  } else {
+    Correlations_psid_standard[i, "correlation"] <- NA
+    Correlations_psid_standard[i, "p"] <- NA
+    Correlations_psid_standard[i, "ci1"] <- NA
+    Correlations_psid_standard[i, "ci2"] <- NA
+  }
+  # print(Correlations_psid)
+}
+Correlations_psid_standard
+
+# Create correlation matrix from the correlation table
+cormatrix_psid_standard <- reshape2::dcast(Correlations_psid_standard[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
+  dplyr::select(-variable1) %>%
+  as.matrix(.) %>%
+  `rownames<-`(colnames(.)) # naming the rows
+# Rearrange the matrix (same as before)
+cormatrix_psid_standard <- lessR::corReorder(R=cormatrix_psid_standard, order = "manual", vars = c(c1, c2, c6, i1, i2, i3, e1, e2))
+
+# Create p matrix
+pmatrix_psid_standard <- reshape2::dcast(Correlations_psid_standard[, c("variable1", "variable2", "p")], variable1~variable2, value.var="p") %>%
+  dplyr::select(-variable1) %>%
+  as.matrix(.) %>%
+  # naming the rows
+  `rownames<-`(colnames(.))
+# rearrange the matrix (same as before)
+pmatrix_psid_standard<- lessR::corReorder(R= pmatrix_psid_standard, order = "manual", vars = c(c1, c2, c6, i1, i2, i3, e1, e2))
+# -------------plot PSID standardized-------------
+## draw plot
+# plot with mental health variables
+corrplot_PSID_SES_standard <- corrplot.mixed(cormatrix_psid_standard, p.mat = pmatrix_psid_standard, insig = "blank",sig.level = 0.05,
+                                             cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+
 
 # ---------------------------------------------------------------------------------------
 # ---------- 3.  Combine two plots into one--------------------------------------------
@@ -581,6 +879,25 @@ mtext("Correlation matrix PSID", side = 1, line = -1) # text
 par(opar)
 dev.off()
 
+#################3.3  SES variables (standardized) ###############
+# create figure of two correlation matrix in one pdf (only SES variables)
+# CFPS & PSID
+pdf("Correlational matrix SES (standardized).pdf",width=15,height=9)
+opar<-par(no.readonly=T)
+par(mfrow=c(1,2))
+# CFPS
+corrplot.mixed(cormatrix_cfps_standard, p.mat = pmatrix_cfps_standard, insig = "blank",sig.level = 0.05,
+               cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix CFPS (standardized)", side = 1, line = -1) # text
+# PSID
+corrplot.mixed(cormatrix_psid_standard, p.mat = pmatrix_psid_standard, insig = "blank", sig.level = 0.05,
+               cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
+mtext("Correlation matrix PSID (standardized)", side = 1, line = -1) # text
+par(opar)
+dev.off()
+
+
+
 # ---------------------------------------------------------------------------------------
 # ---------- 4.  Extract and save data frame--------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -595,3 +912,4 @@ table_ses_mental_psid_p<- pmatrix_psid[3:10, 1:2]
 save(cormatrix_cfps, cormatrix_psid, file = "correlation_matrix.RData")
 write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
 write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
+
