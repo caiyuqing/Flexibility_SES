@@ -333,7 +333,6 @@ data_long <- SES_mental_CFPS_complete %>%
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
 jtools::summ(m1)  # ICC of ID: 0.00; ICC of SES: 0.48
 
-
 # variance explained by different ways of calculating SES:
 data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1] + data.frame(VarCorr(m1))$vcov[2] + data.frame(VarCorr(m1))$vcov[3]) # 0.48496
 
@@ -428,7 +427,7 @@ data_long <- standard4 %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE) 
 
-m5 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long) # boundary (singular) fit
+m5 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
 jtools::summ(m5) # ICC of ID: 0.64; ICC of SES: 0.00
 
 data.frame(VarCorr(m5))$vcov[2]/(data.frame(VarCorr(m5))$vcov[1]+data.frame(VarCorr(m5))$vcov[2]+data.frame(VarCorr(m5))$vcov[3]) # 0.000818
@@ -444,12 +443,12 @@ data_long <- standard5 %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE) 
 
-m6 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)  # boundary (singular) fit
+m6 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)  # boundary (singular) fit, different from the previous one with qnorm
 jtools::summ(m6) # ICC of ID: 0.42; ICC of SES: 0.00
 
 data.frame(VarCorr(m6))$vcov[2]/(data.frame(VarCorr(m6))$vcov[1]+data.frame(VarCorr(m6))$vcov[2]+data.frame(VarCorr(m6))$vcov[3]) # 0.000818
 
-psych::alpha(standard5[, 1:11])$total$average_r # 0.42055
+psych::alpha(standard5[, 1:11])$total$average_r # 0.61791
 
 as.numeric(VarCorr(m6)$SES) /
   (as.numeric(VarCorr(m6)$SES) +
