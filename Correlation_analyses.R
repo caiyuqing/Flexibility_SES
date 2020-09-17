@@ -165,7 +165,7 @@ SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), da
                 # education 1-2
                 e1 = SES_leo_cfps,
                 e2 = SES_ozer_cfps)
-
+summary(SES_mental_CFPS)
 
 # Extract colnames of SES_mental_CFPS
 dimname <- colnames(SES_mental_CFPS)
@@ -175,7 +175,6 @@ dimname #see the names
 N_variable_cfps <- ncol(SES_mental_CFPS) # all variables
 N_SES_CFPS <- N_variable_cfps - 2 # only SES variables
 N_correlation <- N_variable_cfps*N_variable_cfps # number of correlations 
-
 
 # determine the type of each of variable (dichotomous or ordinal)
 # create a data frame to store the result
@@ -188,7 +187,8 @@ for (i in 1:N_variable_cfps) {
     variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
       variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
 }
-
+# check type of variable
+variable_type
 
 #-------------cor matrix & p-value matrix CFPS-------------
 ## create correlation table for all the correlation relationship between variables
@@ -241,7 +241,7 @@ for (i in 1:N_correlation) {
          }
      # print(Correlations_cfps)
 }
-# Correlations_cfps
+Correlations_cfps
 
 # Create correlation matrix from the correlation table
 cormatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", "correlation")], variable1~variable2, value.var="correlation") %>%
@@ -308,7 +308,6 @@ corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, 
 
 ############### 1.3 Calculate inter-rater correlation coefficient of all the SES variables###########
 ## ICC
-
 ## transfer the scores for each SES into z-score 
 SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
 
@@ -317,129 +316,74 @@ SES_mental_CFPS_complete %>%
   dplyr::select(1:(ncol(.)-2))  %>%
   irr::icc(., model = "twoway", type = "agreement", unit = "single")
   #psych::ICC(.)
-data_long <- SES_mental_CFPS_complete %>%
-  mutate(ID = 1:2196) %>%
-  dplyr::select(-dep, -cog) %>%
-  gather(., SES, score,  c1:e2, factor_key=TRUE)
+data_long <- gather(SES_mental_CFPS_complete, SES, score)
+
+#lme4
 library(lme4)
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
-data.frame(VarCorr(m1))
-data.frame(VarCorr(m1))$vcov[1]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
 #z-socre
 ## calculate z-score for all SES scores
 ## build a table for z-scores
-z_score_CFPS <- drop_na(SES_mental_CFPS)[NA,]
-for(i in 1:N_SES_CFPS){
-  var <- colnames(SES_mental_CFPS[i])
-  z_score_CFPS[,i] <- (SES_mental_CFPS_complete[,var] - mean(SES_mental_CFPS_complete[,var], na.rm = TRUE))/sd(SES_mental_CFPS_complete[,var], na.rm = TRUE)}
+z_score_CFPS <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) scale(x)))
+
 # Two-way random effect model, absolute agreement, single measurement
 z_score_CFPS %>%
   dplyr::select(1:(ncol(.)-2)) %>%
-  #irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  psych::ICC(.)
+  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+  #psych::ICC(.)
 data_long <- z_score_CFPS %>%
   mutate(ID = 1:2196) %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE)
+
+#lme4
 library(lme4)
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
 data.frame(VarCorr(m1))
 data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
-
 ##### calculate the index that is similar to icc
 # standarize the data using "subtracting the minimum and dividing by the maximum minus minimum"
-standard1 <- drop_na(SES_mental_CFPS)[NA,]
-for(i in 1:N_SES_CFPS){
-  var <- colnames(SES_mental_CFPS[i])
-  standard1[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/(max(SES_mental_CFPS_complete[,var]-min(SES_mental_CFPS_complete[,var])))}
+standard1 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) (x - min(x)) / (max(x) - min(x))))
 standard1 %>%
   dplyr::select(-dep, -cog) %>%
   #irr::icc(., model = "twoway", type = "agreement", unit = "single")
   psych::ICC(.)
 
-# ICC use lme4
 data_long <- standard1 %>%
   mutate(ID = 1:2196) %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE)
 
-## way 1 of standardizing the data
-#d <- data_long %>% 
-#  group_by(SES) %>%
-#  mutate(zscore = (score - mean(score))/sd(score)) %>% 
-#  ungroup() 
-#
-## way 2 of standardizing the data
-#d2 <- data_long %>% 
-#  group_by(SES) %>%
-#  mutate(zscore = score/sd(score)) %>% 
-#  ungroup() 
-
-## current way of standardizing the data
-#d <- data_long %>%
-#  group_by(SES) %>%
-#  dplyr::mutate(standard = (score-min(score))/max(score))
-# model 1 (two variance)
+# lme4
 library(lme4)
-#m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
-#m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
 
 data.frame(VarCorr(m1))
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
+# standardize using another max/min method (/max)
+standard2 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) (x - min(x)) / (max(x))))
 
-# ICC
-#data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
-#data.frame(VarCorr(m1_2))$vcov[2]/(data.frame(VarCorr(m1_2))$vcov[1]+data.frame(VarCorr(m1_2))$vcov[2]+data.frame(VarCorr(m1_2))$vcov[3])
-data.frame(VarCorr(m1))$vcov[1]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
-
-
-## model 2 (one-way model, same result as irr)
-#m2 <- lme4::lmer(zscore ~ 1 +  (1|ID), data=d)
-#VarCorr(m2)
-##ICC
-#data.frame(VarCorr(m2))$vcov[1]/(data.frame(VarCorr(m2))$vcov[1]+data.frame(VarCorr(m2))$vcov[2])
-#
-#m2_3 <- lme4::lmer(standard ~ 1 +  (1|ID), data=d3)
-#VarCorr(m2_3)
-##ICC
-#data.frame(VarCorr(m2_3))$vcov[1]/(data.frame(VarCorr(m2_3))$vcov[1]+data.frame(VarCorr(m2_3))$vcov[2])
-
-### standardize data using rank-based method
-standard2 <- drop_na(SES_mental_CFPS)[NA,]
-for(i in 1:N_SES_CFPS){
-  var <- colnames(SES_mental_CFPS[i])
-  standard2[,i] <- qnorm(rank(SES_mental_CFPS_complete[,var])/(length(SES_mental_CFPS_complete[,var])+1)) }
 standard2 %>%
   dplyr::select(-dep, -cog) %>%
-  #irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  psych::ICC(.)
-
+  irr::icc(., model = "twoway", type = "agreement", unit = "single")
+  #psych::ICC(.)
 data_long <- standard2 %>%
   dplyr::mutate(ID = 1:2196) %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE) 
 
-## calculate ICC
-# model 1 (two variance)
+#lme4
 library(lme4)
-#m1 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d)    # boundary (singular)
-#m1_2 <- lme4::lmer(zscore ~ 1 + (1|ID) + (1|SES) , data=d2)
-
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
-data.frame(VarCorr(m1))
-m_fits <- allFit(m1)
-# ICC
-data.frame(VarCorr(m1))$vcov[1]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
 
-# standardize using another max/min method (/max)
-standard3 <- drop_na(SES_mental_CFPS)[NA,]
-for(i in 1:N_SES_CFPS){
-  var <- colnames(SES_mental_CFPS[i])
-  standard3[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/max(SES_mental_CFPS_complete[,var])}
+### standardize data using rank-based method
+standard3 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function (x) qnorm(rank(x) / (length(x) + 1))))
 standard3 %>%
   dplyr::select(-dep, -cog) %>%
   #irr::icc(., model = "twoway", type = "agreement", unit = "single")
@@ -450,9 +394,44 @@ data_long <- standard3 %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE) 
 
+## calculate ICC
+# model 1 (two variance)
 library(lme4)
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+
+data.frame(VarCorr(m1))
+data.frame(VarCorr(m1))$vcov[1]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+
+
+dataframes_hist <- replicate(11, data.frame())
+for (i in 1:11) {
+  dataframes_hist[[i]] <- cbind(SES_mental_CFPS_complete[i], z_score_CFPS[i], standard1[i], standard2[i], standard3[i])
+}
+for (i in 1:11){
+  names(dataframes_hist[[i]]) <- c(paste0(colnames(dataframes_hist[[i]][1]), "_origin"),
+                                   paste0(colnames(dataframes_hist[[i]][1]), "_zscore"),
+                                   paste0(colnames(dataframes_hist[[i]][1]), "_min/max(/max-min)"),
+                                   paste0(colnames(dataframes_hist[[i]][1]), "_min/max(/max)"),
+                                   paste0(colnames(dataframes_hist[[i]][1]), "_rank-based"))
+}
+dataframes_hist_long <- replicate(11, data.frame())
+for (i in 1:11) {
+  dataframes_hist_long[[i]] <- gather(dataframes_hist[[i]], SES, score, factor_key=TRUE) 
+}
+pdf("histogram(cfps)3.pdf",width=50,height=9)
+opar<-par(no.readonly=T)
+par(mfrow=c(1,11))
+for (i in 1:11) {
+plot<-  ggplot(dataframes_hist_long[[i]], aes(x=score)) + 
+    geom_histogram(aes(y=..density..), bins= 20,colour="black", fill="white")+ 
+    facet_grid(~SES, scales = "free") +
+    geom_density(alpha=.2, fill="blue") + 
+    stat_function(fun = dnorm, args = list(mean = mean(dataframes_hist_long[[i]]$score), sd = sd(dataframes_hist_long[[i]]$score)))
+print(plot)
+}
+par(opar)
+dev.off()
+
 
 #------------------Correlation relationship between standardized SES score-----------------
 # correlation matrix of standardized data

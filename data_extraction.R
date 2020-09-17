@@ -150,8 +150,6 @@ df.individual <- dfa0 %>%
                 wordtest, mathtest) # cognitive ability
 
 ### family 
-colnames(dff0)
-summary(dff0$famin)
 df.family <- dff0 %>%
   dplyr::select(# id
                 fid, # fid
