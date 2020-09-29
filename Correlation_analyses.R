@@ -14,8 +14,8 @@
 ###  Purpose:                                                                                                  ###
 ###  Calculate the correlations between the SES scores and mental health measurements                          ###
 ###                                                                                                            ###
-###  Code authors: HU Chuan-Peng, PhD, Neuroimaging Center (NIC), Johannes Gutenberg                           ###  
-###                University Medical Center, 55131 Mainz, Germany;                                            ###
+###  Code authors: HU Chuan-Peng, PhD, Leibniz Institute for Resilience Research                               ###
+###                                    55131 Mainz, Germany;                                                   ###
 ###                Yuqing Cai, Tsinghua University, 100086, China                                              ###
 ###                                                                                                            ###
 ###  Input data                                                                                                ###
@@ -58,16 +58,16 @@
 ###     # ------------------------------Table of Contents --------------------------------------------#        ###
 ###     # --------------------------------------------------------------------------------------------#        ###
 ###     # ---------- 1.  Correlation analysis of CFPS ------------------------------------------------#        ###
-###     # ----------  # 1.1 Prepare mental health variables of ---------------------------------------#        ###
-###     # ----------  # 1.2 Correlation relationship between SES scores and mental health scores ---- #        ###
-###     # ----------- # 1.3 Calculate inter-rater correlation coefficient of all the SES variables----#        ###
+###     # ----------    1.1 Prepare mental health variables of ---------------------------------------#        ###
+###     # ----------    1.2 Correlation relationship between SES scores and mental health scores ---- #        ###
+###     # ----------    1.3 Calculate inter-rater correlation coefficient of all the SES variables----#        ###
 ###     # ---------- 2.  Correlation analysis of PSID ------------------------------------------------#        ###
-###     # ----------  # 2.1 Prepare mental health variables ------------------------------------------#        ###
-###     # ----------  # 2.2 Correlation relationship between SES scores and mental health scores ---- #        ###
-###     # ----------- # 2.3 Calculate inter-rater correlation coefficient of all the SES variables----#        ###
+###     # ----------    2.1 Prepare mental health variables ------------------------------------------#        ###
+###     # ----------    2.2 Correlation relationship between SES scores and mental health scores ---- #        ###
+###     # ----------    2.3 Calculate inter-rater correlation coefficient of all the SES variables----#        ###
 ###     # ---------- 3.  Combine two plots into one --------------------------------------------------#        ###
-###     # ----------  # 3.1 All variables ----------------------------------------------------------- #        ###
-###     # ----------- # 3.2 Only SES variables--------------------------------------------------------#        ###
+###     # ----------    3.1 All variables ----------------------------------------------------------- #        ###
+###     # ----------    3.2 Only SES variables--------------------------------------------------------#        ###
 ###     # ---------- 4.  Extract and save data frame -------------------------------------------------#        ###
 ##################################################################################################################
 ##################################################################################################################
@@ -99,57 +99,57 @@ if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-p
 if (!require(lessR)) {install.packages("lessR",repos = "http://cran.us.r-project.org"); require(lessR)}
 if (!require(lme4)) {install.packages("lme4",repos = "http://cran.us.r-project.org"); require(lme4)}
 if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
+
 # ---------------------------------------------------------------------------------------
 # ---------- 1.  Correlation analysis of CFPS--------------------------------------------
 # ---------------------------------------------------------------------------------------
 
 ############# 1.1 Prepare mental health variables of CPFS ##########
 ## children mental health variables
-
 load("df.CFPS_child.RData") # load data
 
 # extract mental health variables
 mental_CFPS <- df.CFPS_child %>%   
-  dplyr::select(wn401,	# Feel depressed and cannot cheer up
-                wn402,	# Feel nervous
-                wn403,	# Feel agitated or upset and cannot remain calm 
-                wn404,	# Feel hopeless about the future 
-                wn405,	# Feel that everything is difficult 
-                wn406,	# Think life is meaningless 
+  dplyr::select(wn401,	    # Feel depressed and cannot cheer up
+                wn402,	    # Feel nervous
+                wn403,	    # Feel agitated or upset and cannot remain calm 
+                wn404,	    # Feel hopeless about the future 
+                wn405,	    # Feel that everything is difficult 
+                wn406,	    # Think life is meaningless 
                 # from adult dataframe (*some children defined here are in adult dataframe in the original dataset (age above 16))
-                qq601,  # Feel depressed and cannot cheer up
-                qq602,  # Feel nervous
-                qq603,  # Feel agitated or upset and cannot remain calm
-                qq604,  # Feel hopeless about the future 
-                qq605,  # Feel that everything is difficult 
-                qq606,  # Think life is meaningless 
+                qq601,      # Feel depressed and cannot cheer up
+                qq602,      # Feel nervous
+                qq603,      # Feel agitated or upset and cannot remain calm
+                qq604,      # Feel hopeless about the future 
+                qq605,      # Feel that everything is difficult 
+                qq606,      # Think life is meaningless 
                 ### cognitive ability	
-                wordtest,	# word test
-                mathtest, # math test
-                pid) %>%  # pid
+                wordtest,	  # word test
+                mathtest,   # math test
+                pid) %>%    # pid
   dplyr::na_if(., -8) %>%   # set NA
   # calculate the total score of depression and cognition
-  dplyr::mutate(depression1 = wn401+wn402+wn403+wn404+wn405+wn406, # from children's data frame
-                depression2 = qq601+qq602+qq603+qq604+qq605+qq606, # from adults' data frame
-                cognition = wordtest + mathtest) %>% # cognition (same for children and adult's questionnarie)
-  dplyr::mutate(depression1 = as.character(depression1),  # convert to numeric variables
+  dplyr::mutate(depression1 = wn401+wn402+wn403+wn404+wn405+wn406,   # from children data frame
+                depression2 = qq601+qq602+qq603+qq604+qq605+qq606,   # from adults' data frame
+                cognition = wordtest + mathtest) %>%                 # cognition (same for children and adult's questionnaire)
+  dplyr::mutate(depression1 = as.character(depression1),             # convert to numeric variables
                 depression2 = as.character(depression2)) %>%
-  tidyr::unite("depression",depression1:depression2, na.rm = TRUE, remove = TRUE) %>%  # combine two columns of depression into one column
-  dplyr::select(pid, depression, cognition) %>%  #select only necessary variables
-  dplyr::mutate(depression = as.numeric(depression))   # convert to numeric variables
-
+  tidyr::unite("depression", depression1:depression2, 
+               na.rm = TRUE, remove = TRUE) %>%                      # combine two columns of depression into one column
+  dplyr::select(pid, depression, cognition) %>%                      #select only necessary variables
+  dplyr::mutate(depression = as.numeric(depression))                 # convert to numeric variables
 
 # check score
 summary(mental_CFPS)
 
 ############ 1.2 Correlation relationship between SES scores and mental health scores CFPS ##############
-# import SES data
+# Load SES data
 load("SES_CFPS.RData")
 # merge all ordinal and continuous SES cfps and mental health 
 SES_mental_CFPS <- Reduce(function(x, y) merge(x, y, by = "pid", all = TRUE), dataframes_cfps) %>% 
   dplyr::left_join(., mental_CFPS, by = "pid", all.x = TRUE) %>%  # merge SES data with mental health data
-  dplyr::select(-pid) %>%  # delete the column of pid 
-  dplyr::rename(dep = depression,  #rename columns
+  dplyr::select(-pid) %>%          # delete the column of pid 
+  dplyr::rename(dep = depression,  # rename columns
                 cog = cognition,
                 # composite SES 1-6
                 c1 = SES_betan_cfps, 
@@ -169,42 +169,44 @@ summary(SES_mental_CFPS)
 
 # Extract colnames of SES_mental_CFPS
 dimname <- colnames(SES_mental_CFPS)
-dimname #see the names
 
 # Extract number of SES and mental health variables
-N_variable_cfps <- ncol(SES_mental_CFPS) # all variables
-N_SES_CFPS <- N_variable_cfps - 2 # only SES variables
-N_correlation <- N_variable_cfps*N_variable_cfps # number of correlations 
+N_variable_cfps <- ncol(SES_mental_CFPS)          # all variables
+N_SES_CFPS <- N_variable_cfps - 2                 # only SES variables
+N_correlation <- N_variable_cfps*N_variable_cfps  # number of correlations 
 
 # determine the type of each of variable (dichotomous or ordinal)
 # create a data frame to store the result
 variable_type <- data_frame(variable = dimname,
-                            type = as.character(NA)) 
+                            type = as.character(NA))
+
 # determine the type of variable
 for (i in 1:N_variable_cfps) {
-  var <- as.character(variable_type[i, "variable"])  #extract name of each column
-  if(length(unique(na.omit(SES_mental_CFPS[,var]))) ==2){ # if the variable only have two values, then identify it as dichotomous 
-    variable_type[i, "type"] <- "bin"} else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
-      variable_type[i, "type"] <- "ordi"} else {variable_type[i, "type"] <- NA} # if the variable have more than two values, then identify it as ordinal
+  var <- as.character(variable_type[i, "variable"])            # extract name of each column
+  if(length(unique(na.omit(SES_mental_CFPS[, var]))) == 2){    # if the variable only have two values, then identify it as dichotomous/binary
+    variable_type[i, "type"] <- "bin"} 
+  else if(length(unique(na.omit(SES_mental_CFPS[,var]))) > 2){
+      variable_type[i, "type"] <- "ordi"} 
+  else {variable_type[i, "type"] <- NA}                         # if the variable have more than two values, then identify it as ordinal
 }
 # check type of variable
 variable_type
 
 #-------------cor matrix & p-value matrix CFPS-------------
-## create correlation table for all the correlation relationship between variables
-# build an empty correlation table to store the results for the correlation relationship
-Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_variable_cfps)),# first variable in the correlation relationship
-                                variable2 = as.character(rep(dimname, N_variable_cfps)),# second variable in the correlation relationship
-                                correlation = rep(NA, N_correlation), # correlation coefficient
-                                p = rep(NA, N_correlation), # p-value
-                                ci1 = rep(NA, N_correlation),# confidence interval (lower)
-                                ci2 = rep(NA, N_correlation)) # confidence interval (upper)
+# Create a correlation table for all the correlation relationship between variables
+# First, create an empty correlation table to store the results for the correlation relationship
+Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_variable_cfps)), # first variable in the correlation relationship
+                                variable2 = as.character(rep(dimname, N_variable_cfps)),        # second variable in the correlation relationship
+                                correlation = rep(NA, N_correlation),                           # correlation coefficient
+                                p = rep(NA, N_correlation),                                     # p-value
+                                ci1 = rep(NA, N_correlation),                                   # confidence interval (lower)
+                                ci2 = rep(NA, N_correlation))                                   # confidence interval (upper)
 
-# calculate correlation between SESs and mental health variables with different correlational analysis methods depend on the type of variable
+# Then, calculate correlation between SES scores and mental health variables, methods depend on the type of variable
 for (i in 1:N_correlation) {
    v1 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable1"])) %>% dplyr::pull() # extract first variable in the correlation analysis
    v2 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable2"])) %>% dplyr::pull() # extract second variable in the correlation analysis
-   # if both variables are ordinal, use Spearsman
+   # if both variables are ordinal, use Spearman
    if(dplyr::n_distinct(v1, na.rm = T) > 2 && dplyr::n_distinct(v2, na.rm = T) > 2){
      a <- cor.test(v1, v2, method = "spearman", exact = FALSE)
      Correlations_cfps[i, "correlation"]<- a$estimate
@@ -285,22 +287,23 @@ pmatrix_cfps <- reshape2::dcast(Correlations_cfps[, c("variable1", "variable2", 
 # rearrange the matrix (put mental health variables first)
 pmatrix_cfps<- lessR::corReorder(R= pmatrix_cfps, order = "manual", vars = c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
 
-#-------------CI calculating-------------
-## cor.test with spearman cannot calculate ci, calculate them separately 
-# calculate ci of spearman correlation for ordinal variables
-corrtest_spearman <-corr.test(SES_mental_CFPS[, variable_type[variable_type$type == "ordi",]$variable], y = NULL, use = "pairwise",method="spearman",adjust="holm", 
-                     alpha=.05,ci=TRUE,minlength=5)
+#------------- CI calculating-------------
+## cor.test with Spearman cannot calculate ci, calculate them separately 
+# calculate ci of Spearman correlation for ordinal variables
+corrtest_spearman <-corr.test(SES_mental_CFPS[, variable_type[variable_type$type == "ordi",]$variable], y = NULL, 
+                              use = "pairwise", method="spearman", adjust="holm", 
+                              alpha=.05, ci=TRUE, minlength=5)
+
 # select rownames (correlation analysis pair of variables) for further pairing
 ci_spearman_name <- rownames(corrtest_spearman$ci)
 
-# create a column for data frame merge
+# create a column for data frame merge, # because all correlations have two pairs, repeat the process
 corrtest_spearman$ci$name_combine <- ci_spearman_name
-
-# because all correlations have two pairs, repeat the process
 corrtest_spearman$ci$name_combine2 <- ci_spearman_name
 
 # create another ci table for the second merge
 corrtest_spearman_ci2<-corrtest_spearman$ci
+
 # rename the varibales 
 names(corrtest_spearman_ci2) <- c("lower2", "r2", "upper2", "p2", "name_combine","name_combine2")
 
@@ -326,105 +329,156 @@ corrplot_CFPS <- corrplot.mixed(cormatrix_cfps, p.mat = pmatrix_cfps, insig = "b
 # extract only SES variables
 cormatrix_cfps_ses <- cormatrix_cfps[3:13, 3:13]
 pmatrix_cfps_ses <- pmatrix_cfps[3:13, 3:13]
+
 # plot only SES variables
 corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
-                              cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+                              cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 
-############### 1.3 Calculate inter-rater correlation coefficient of all the SES variables###########
-## ICC
-# delete NA
+############### 1.3 Calculate inter-rater correlation coefficient of all the SES variables ###########
+# Here we used four different approaches to transform the SES scores and calculate the variance explained by SES methods
+#   (1) Original data
+#   (2) Z-score
+#   (3) (D_ij-Min_i)/(Max_i - Min_i); D_ij is data of j for the i-th SES method; Max_i/Min_i is the max/min value for the i-th SES method;
+#   (4) D_ij/Max_i, 
+#   (5) Rank-based
+
+## only keep the complete cases for ICC calculation 
 SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
 
-### ICC of original scores (without standardization)
-SES_mental_CFPS_complete %>%
-  dplyr::select(1:(ncol(.)-2))  %>%
-  #irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  psych::ICC(.)
+std1 <- apply(SES_mental_CFPS_complete,2,sd)
+sd(std1, na.rm = T) # 9153.7
+
+# Approach (1): ICC using original scores (without standardization)
+
 data_long <- SES_mental_CFPS_complete %>%
-  mutate(ID = 1:2196) %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
   dplyr::select(-dep, -cog) %>%
-  gather(., SES, score,  c1:e2, factor_key=TRUE)
+  tidyr::gather(., SES, score,  c1:e2, factor_key=TRUE)
 
-#lme4
-library(lme4)
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+jtools::summ(m1)  # ICC of ID: 0.00; ICC of SES: 0.48
 
-#z-socre
-z_score_CFPS <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) scale(x)))
+# variance explained by different ways of calculating SES:
+data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1] + data.frame(VarCorr(m1))$vcov[2] + data.frame(VarCorr(m1))$vcov[3]) # 0.48496
 
-# Two-way random effect model, absolute agreement, single measurement
-z_score_CFPS %>%
-  dplyr::select(1:(ncol(.)-2)) %>%
-  irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  #psych::ICC(.)
-data_long <- z_score_CFPS %>%
-  mutate(ID = 1:2196) %>%
-  dplyr::select(-dep, -cog) %>%
-  gather(., SES, score,  c1:e2, factor_key=TRUE)
+psych::alpha(SES_mental_CFPS_complete[, 1:11])$total$average_r # 0.58802
 
-#lme4
-library(lme4)
-m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
-data.frame(VarCorr(m1))
-data.frame(VarCorr(m1))$vcov[1]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+# Approach (2): ICC using z-score
+standard1 <- data.frame(base::scale(SES_mental_CFPS_complete))
 
-# standarize the data using "subtracting the minimum and dividing by the maximum minus minimum"
-standard1 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) (x - min(x)) / (max(x) - min(x))))
-standard1 %>%
-  dplyr::select(-dep, -cog) %>%
-  #irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  psych::ICC(.)
+std2 <- apply(standard1,2,sd)
+avg2 <- apply(standard1, 2, mean)
+sd(std2, na.rm = T) # 0
 
 data_long <- standard1 %>%
-  mutate(ID = 1:2196) %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
+  dplyr::select(-dep, -cog) %>%
+  tidyr::gather(., SES, score,  c1:e2, factor_key=TRUE)
+
+m2 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long) # warning: Boundary (singular) fit
+isSingular(m2)
+jtools::summ(m2) # ICC of ID: 0.63; ICC of SES: 0.00
+# data.frame(VarCorr(m2))
+# data.frame(VarCorr(m2))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1] + data.frame(VarCorr(m1))$vcov[2] + data.frame(VarCorr(m1))$vcov[3])
+psych::alpha(standard1[, 1:11])$total$average_r # 0.58802
+
+# Approach (3):
+# standardize the data using "subtracting the minimum and dividing by the maximum minus minimum"
+standard2 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard2[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/(max(SES_mental_CFPS_complete[,var]-min(SES_mental_CFPS_complete[,var])))}
+
+std3 <- apply(standard2,2,sd)
+avg3 <- apply(standard2, 2, mean)
+sd(std3, na.rm = T) # 0.13272
+
+# ICC use lme4
+data_long <- standard2 %>%
+  mutate(ID = 1:nrow(.)) %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE)
 
-# lme4
-library(lme4)
-m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+m3 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+jtools::summ(m3) # ICC of ID: 0.25; ICC of SES: 0.42
 
-data.frame(VarCorr(m1))
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+# ICC
+data.frame(VarCorr(m3))$vcov[2]/(data.frame(VarCorr(m3))$vcov[1]+data.frame(VarCorr(m3))$vcov[2]+data.frame(VarCorr(m3))$vcov[3]) # 0.4156
 
-# standardize using another max/min method (/max)
-standard2 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function(x) (x - min(x)) / (max(x))))
+psych::alpha(standard2[, 1:11])$total$average_r # 0.58802
 
-standard2 %>%
-  dplyr::select(-dep, -cog) %>%
-  irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  #psych::ICC(.)
-data_long <- standard2 %>%
-  dplyr::mutate(ID = 1:2196) %>%
-  dplyr::select(-dep, -cog) %>%
-  gather(., SES, score,  c1:e2, factor_key=TRUE) 
+# Approach (4): standardize using another max/min method2 (/max)
+standard3 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard3[,i] <- (SES_mental_CFPS_complete[,var])/max(SES_mental_CFPS_complete[,var])}
 
-#lme4
-library(lme4)
-m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+std4 <- apply(standard3, 2, sd)
+avg4 <- apply(standard3, 2, mean)
+sd(std4, na.rm=T) # 0.112
 
-
-### standardize data using rank-based method
-standard3 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function (x) qnorm(rank(x) / (length(x) + 1))))
-standard3 %>%
-  dplyr::select(-dep, -cog) %>%
-  #irr::icc(., model = "twoway", type = "agreement", unit = "single")
-  psych::ICC(.)
+# standard3 %>%
+#   dplyr::select(-dep, -cog) %>%
+#   #irr::icc(., model = "twoway", type = "agreement", unit = "single")
+#   psych::ICC(.)
 
 data_long <- standard3 %>%
-  dplyr::mutate(ID = 1:2196) %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
   dplyr::select(-dep, -cog) %>%
   gather(., SES, score,  c1:e2, factor_key=TRUE) 
 
-## calculate ICC
-# model 1 (two variance)
-library(lme4)
-m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+m4 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+jtools::summ(m4) # ICC of ID: 0.25; ICC of SES: 0.43
 
-data.frame(VarCorr(m1))
-data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1]+data.frame(VarCorr(m1))$vcov[2]+data.frame(VarCorr(m1))$vcov[3])
+data.frame(VarCorr(m4))$vcov[2]/(data.frame(VarCorr(m4))$vcov[1] + data.frame(VarCorr(m4))$vcov[2] + data.frame(VarCorr(m4))$vcov[3]) # 0.43093
+
+psych::alpha(standard3[, 1:11])$total$average_r # .58802
+
+# Approach (5): standardize data using rank-based method
+standard4 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard4[,i] <- qnorm(rank(SES_mental_CFPS_complete[,var])/(length(SES_mental_CFPS_complete[,var])+1))
+}
+
+std5 <- apply(standard4, 2, sd)
+avg5 <- apply(standard4, 2, mean)
+sd(std5, na.rm = T) # 0.159
+
+#tmp <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function (x) qnorm(rank(x) / (length(x) + 1))))
+
+data_long <- standard4 %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
+  dplyr::select(-dep, -cog) %>%
+  gather(., SES, score,  c1:e2, factor_key=TRUE) 
+
+m5 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
+jtools::summ(m5) # ICC of ID: 0.64; ICC of SES: 0.00
+
+data.frame(VarCorr(m5))$vcov[2]/(data.frame(VarCorr(m5))$vcov[1]+data.frame(VarCorr(m5))$vcov[2]+data.frame(VarCorr(m5))$vcov[3]) # 0.000818
+
+psych::alpha(standard4[, 1:11])$total$average_r # 0.62905
+
+# standard5 <- drop_na(SES_mental_CFPS)[NA,]
+standard5 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function (x) rank(x) / (length(x) + 1)))
+apply(standard5, 2, sd)
+
+data_long <- standard5 %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
+  dplyr::select(-dep, -cog) %>%
+  gather(., SES, score,  c1:e2, factor_key=TRUE) 
+                                 
+m6 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)  # boundary (singular) fit, different from the previous one with qnorm
+jtools::summ(m6) # ICC of ID: 0.42; ICC of SES: 0.00
+
+data.frame(VarCorr(m6))$vcov[2]/(data.frame(VarCorr(m6))$vcov[1]+data.frame(VarCorr(m6))$vcov[2]+data.frame(VarCorr(m6))$vcov[3]) # 0.000818
+
+psych::alpha(standard5[, 1:11])$total$average_r # 0.61791
+
+as.numeric(VarCorr(m6)$SES) /
+  (as.numeric(VarCorr(m6)$SES) +
+     as.numeric(VarCorr(m6)$ID) +
+     sigma(m6) ^ 2) # 0
 
 # plot histogram of all dataset
 dataframes_hist <- replicate(11, data.frame())
