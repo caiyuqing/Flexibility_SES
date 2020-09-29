@@ -133,7 +133,6 @@ df.CFPS <- df.children %>%
   
 # check the data
 summary(df.CFPS)
-df.CFPS$cfps2010eduy_best
 ## select children data (and parents SES) for the further analysis
 df.CFPS_child <- df.CFPS %>%
   dplyr::filter(role == "child") %>% #select children
@@ -147,7 +146,7 @@ df.CFPS_child <- df.CFPS %>%
                 eduy_c = cfps2010eduy_best,
                 edu_c = cfps2010edu_best) %>% # occupation coding
   # select their parents, and parents SES variables (only select those will be used in the following analysis) (mother)
-  dplyr::left_join(., df.CFPS[df.CFPS$role == "mother", c('pid_mother', "qg307egp", "cfps2010eduy_best")], by = 'pid_mother')%>%
+  dplyr::left_join(., df.CFPS[df.CFPS$role == "mother", c('pid_mother', "qg307egp", "cfps2010eduy_best")], by = 'pid_mother') %>%
   # rename variables of parents to distinguish from children (mother)
   dplyr::rename(egp_m= qg307egp,
                 eduy_m = cfps2010eduy_best) %>% # occupation coding
@@ -158,7 +157,7 @@ df.CFPS_child <- df.CFPS %>%
                 eduy_f = cfps2010eduy_best)
 
 # check data
-summary(df.CFPS_child)
+summary(df.CFPS_child$meduc)
 # save the data of children (CFPS) as rdata for further processing
 save(df.CFPS_child, file = "df.CFPS_child.RData")
 
@@ -207,6 +206,7 @@ df.PSID <- read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>% # selec
                                     ifelse(role == 'father', pid, NA)), 
                 pid_child= ifelse(role == 'child', pid, NA)) %>%    # pid child: if the person is child, it is her pid; if not, NA
   dplyr::filter(sequence <= 20)  # select only those still live in the family in 2017 (sequence <= 20)
+
 ## select children data (and parents SES) for the further analysis
 df.PSID_child <- df.PSID %>%
   dplyr::filter(role == "child") %>%  # select only children
@@ -521,7 +521,7 @@ ozer_PSID <- df.PSID_child %>%
                 edu_f_recode = ifelse(is.na(edu_f_recode), edu_m_recode, edu_f_recode)) %>%
   dplyr::mutate(edu_parents = edu_m_recode*3 + edu_f_recode*3) %>%  # composite education score of parents
   dplyr::mutate(SES_ozer_psid = cut(edu_parents, breaks = c(0, median(edu_parents, na.rm = TRUE)-0.01, 100), labels = c('1', '2')))%>%  #convert SES score into numeric
-  dplyr::mutate(SES_ozer_psid = as.numeric(as.character(SES_ozer_psid)))  #convert SES score into numeric
+  dplyr::mutate(SES_ozer_psid = as.numeric(as.character(SES_ozer_psid))-1)  #convert SES score into numeric
 
 # check SES score
 table(ozer_PSID$SES_ozer_psid)
@@ -850,5 +850,6 @@ for (i in 1:N_SES_PSID) {
   print(dataframes_psid)
 }
 dataframes_psid
+
 # save the list
 save(dataframes_psid, file = "SES_PSID.RData")
