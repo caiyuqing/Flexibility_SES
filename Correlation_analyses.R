@@ -202,6 +202,11 @@ Correlations_cfps <- data.frame(variable1 = as.character(rep(dimname, each = N_v
                                 ci1 = rep(NA, N_correlation),                                   # confidence interval (lower)
                                 ci2 = rep(NA, N_correlation))                                   # confidence interval (upper)
 
+Correlations_cfps <- SES_mental_CFPS %>%
+  tidyr::drop_na() %>%
+  correlation::correlation(., method = 'spearman')  # use spearman for all correlations, it's robust
+  # qgraph::cor_auto()
+
 # Then, calculate correlation between SES scores and mental health variables, methods depend on the type of variable
 for (i in 1:N_correlation) {
    v1 <- SES_mental_CFPS %>% dplyr::select(as.character(Correlations_cfps[i, "variable1"])) %>% dplyr::pull() # extract first variable in the correlation analysis
@@ -243,20 +248,23 @@ for (i in 1:N_correlation) {
          }
      # print(Correlations_cfps)
 }
-Correlations_cfps
+# Correlations_cfps
 
 
 ######################################################################################
 ####################exploration on biserial correlation (delete later)################
 ######################################################################################
+SES_mental_CFPS_complete <- SES_mental_CFPS %>%
+  tidyr::drop_na()
 
 biserial.cor(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1)
 
-rb<-polyserial(SES_mental_CFPS$c1, SES_mental_CFPS$e1)
+rb <- polyserial(SES_mental_CFPS$c1, SES_mental_CFPS$e1)
 
 rpb <- cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1, method = "pearson")$estimate
+
 zrb <- rpb*sqrt(3991)
-2*pnorm(zrb, lower.tail = FALSE)
+2* pnorm(zrb, lower.tail = FALSE)
 2 * pnorm(-abs(rb$rho / sqrt(rb$var[1,1]))) #std.error = sqrt(X$var[1,1]), p-value = 2 * pnorm(-abs(rho / std.error)))
 
 portion<-prop.table(table(SES_mental_CFPS$e1))
@@ -342,8 +350,92 @@ corrplot_CFPS_SES <-corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, 
 #   (4) D_ij/Max_i, 
 #   (5) Rank-based
 
-## only keep the complete cases for ICC calculation 
 SES_mental_CFPS_complete <- drop_na(SES_mental_CFPS) # before calculating the z-score, drop the missing data to keep all SES scores with equivalent amount of data
+standard1 <- data.frame(base::scale(SES_mental_CFPS_complete))
+standard2 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard2[,i] <- (SES_mental_CFPS_complete[,var] - min(SES_mental_CFPS_complete[,var]))/(max(SES_mental_CFPS_complete[,var]-min(SES_mental_CFPS_complete[,var])))}
+
+standard3 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard3[,i] <- (SES_mental_CFPS_complete[,var])/max(SES_mental_CFPS_complete[,var])}
+
+standard4 <- drop_na(SES_mental_CFPS)[NA,]
+for(i in 1:N_SES_CFPS){
+  var <- colnames(SES_mental_CFPS[i])
+  standard4[,i] <- qnorm(rank(SES_mental_CFPS_complete[,var])/(length(SES_mental_CFPS_complete[,var])+1))
+}
+
+standard5 <- as.data.frame(apply(SES_mental_CFPS_complete, 2, function (x) rank(x) / (length(x) + 1)))
+
+################################################################################################
+########### correlations exploration of differen data sets (delete later)#####
+################################################################################################
+
+# Pearson
+cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$c2, method ="pearson")  # raw
+cor.test(standard1$c1, standard1$c2, method ="pearson")                                # z-score
+cor.test(standard2$c1, standard2$c2, method ="pearson")                                # (raw-min)/(max-min)
+cor.test(standard3$c1, standard3$c2, method ="pearson")                                # (raw/max)
+cor.test(standard4$c1, standard2$c2, method ="pearson")                                # qnorm(rank)
+cor.test(standard5$c1, standard3$c2, method ="pearson")                                # rank()
+
+cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$c2, method ="spearman")  # raw
+cor.test(standard1$c1, standard1$c2, method ="spearman")                                # z-score
+cor.test(standard2$c1, standard2$c2, method ="spearman")                                # (raw-min)/(max-min)
+cor.test(standard3$c1, standard3$c2, method ="spearman")                                # (raw/max)
+cor.test(standard4$c1, standard2$c2, method ="spearman")                                # qnorm(rank)
+cor.test(standard5$c1, standard3$c2, method ="spearman")                                # rank()
+
+# 
+biserial.cor(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1)
+biserial.cor(standard1$c1, standard1$e1)
+biserial.cor(standard2$c1, standard2$e1)
+biserial.cor(standard3$c1, standard3$e1)
+biserial.cor(standard4$c1, standard2$e1)
+biserial.cor(standard5$c1, standard3$e1)
+
+cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1, method ="spearman")
+cor.test(standard1$c1, standard1$e1, method ="spearman")
+cor.test(standard2$c1, standard2$e1, method ="spearman")
+cor.test(standard3$c1, standard3$e1, method ="spearman")
+cor.test(standard4$c1, standard2$e1, method ="spearman")
+cor.test(standard5$c1, standard3$e1, method ="spearman")
+
+cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1, method ="pearson")
+cor.test(standard1$c1, standard1$e1, method ="pearson")
+cor.test(standard2$c1, standard2$e1, method ="pearson")
+cor.test(standard3$c1, standard3$e1, method ="pearson")
+cor.test(standard4$c1, standard2$e1, method ="pearson")
+cor.test(standard5$c1, standard3$e1, method ="pearson")
+
+# 
+phi(table(SES_mental_CFPS_complete$e2, SES_mental_CFPS_complete$e1))
+phi(table(standard1$e2, standard1$e1))
+phi(table(standard2$e2, standard2$e1))
+phi(table(standard3$e2, standard3$e1))
+phi(table(standard4$e2, standard1$e1))
+phi(table(standard5$e2, standard2$e1))
+
+cor.test(SES_mental_CFPS_complete$e2, SES_mental_CFPS_complete$e1, method ="pearson")
+cor.test(standard1$e2, standard1$e1, method ="pearson")
+cor.test(standard2$e2, standard2$e1, method ="pearson")
+cor.test(standard3$e2, standard3$e1, method ="pearson")
+cor.test(standard4$e2, standard2$e1, method ="pearson")
+cor.test(standard5$e2, standard3$e1, method ="pearson")
+
+cor.test(SES_mental_CFPS_complete$e2, SES_mental_CFPS_complete$e1, method ="spearman")
+cor.test(standard1$e2, standard1$e1, method ="spearman")
+cor.test(standard2$e2, standard2$e1, method ="spearman")
+cor.test(standard3$e2, standard3$e1, method ="spearman")
+cor.test(standard4$e2, standard2$e1, method ="spearman")
+cor.test(standard5$e2, standard3$e1, method ="spearman")
+################################END################################
+
+
+## only keep the complete cases for ICC calculation 
 
 std1 <- apply(SES_mental_CFPS_complete,2,sd)
 sd(std1, na.rm = T) # 9153.7
@@ -351,8 +443,9 @@ sd(std1, na.rm = T) # 9153.7
 # Approach (1): ICC using original scores (without standardization)
 
 data_long <- SES_mental_CFPS_complete %>%
-  dplyr::mutate(ID = 1:nrow(.)) %>%
   dplyr::select(-dep, -cog) %>%
+  dplyr::select(c1, i1, e1, e2) %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
   tidyr::gather(., SES, score,  c1:e2, factor_key=TRUE)
 
 m1 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long)
@@ -364,7 +457,7 @@ data.frame(VarCorr(m1))$vcov[2]/(data.frame(VarCorr(m1))$vcov[1] + data.frame(Va
 psych::alpha(SES_mental_CFPS_complete[, 1:11])$total$average_r # 0.58802
 
 # Approach (2): ICC using z-score
-standard1 <- data.frame(base::scale(SES_mental_CFPS_complete))
+
 
 std2 <- apply(standard1,2,sd)
 avg2 <- apply(standard1, 2, mean)
@@ -373,6 +466,12 @@ sd(std2, na.rm = T) # 0
 data_long <- standard1 %>%
   dplyr::mutate(ID = 1:nrow(.)) %>%
   dplyr::select(-dep, -cog) %>%
+  tidyr::gather(., SES, score,  c1:e2, factor_key=TRUE)
+
+data_long <- standard1 %>%
+  dplyr::select(-dep, -cog) %>%
+  dplyr::select(c1, i1, e1, e2) %>%
+  dplyr::mutate(ID = 1:nrow(.)) %>%
   tidyr::gather(., SES, score,  c1:e2, factor_key=TRUE)
 
 m2 <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long) # warning: Boundary (singular) fit
@@ -509,45 +608,6 @@ print(plot)
 }
 par(opar)
 dev.off()
-################################################################################################
-########### correlations exploration of differen data sets (delete later)#####
-################################################################################################
-
-# spearman
-cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$c2, method ="spearman")
-cor.test(standard1$c1, standard1$c2, method ="spearman")
-cor.test(standard2$c1, standard2$c2, method ="spearman")
-cor.test(standard3$c1, standard3$c2, method ="spearman")
-cor.test(z_score_CFPS$c1, standard2$c2, method ="spearman")
-
-biserial.cor(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1)
-biserial.cor(z_score_CFPS$c1, z_score_CFPS$e1)
-biserial.cor(standard1$c1, standard1$e1)
-biserial.cor(standard2$c1, standard2$e1)
-biserial.cor(standard3$c1, standard3$e1)
-
-phi(table(SES_mental_CFPS_complete$e2, SES_mental_CFPS_complete$e1))
-phi(table(z_score_CFPS$e2, z_score_CFPS$e1))
-phi(table(standard1$e2, standard1$e1))
-phi(table(standard2$e2, standard2$e1))
-phi(table(standard3$e2, standard3$e1))
-
-cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$c2, method ="pearson")
-cor.test(SES_mental_CFPS_complete$c1, SES_mental_CFPS_complete$e1, method ="pearson")
-cor.test(SES_mental_CFPS_complete$e2, SES_mental_CFPS_complete$e1, method ="pearson")
-cor.test(standard1$c1, standard1$c2, method ="pearson")
-cor.test(standard1$c1, standard1$e1, method ="pearson")
-cor.test(standard1$e2, standard1$e1, method ="pearson")
-cor.test(standard2$c1, standard2$c2, method ="pearson")
-cor.test(standard2$c1, standard2$e1, method ="pearson")
-cor.test(standard2$e2, standard2$e1, method ="pearson")
-cor.test(standard3$c1, standard3$c2, method ="pearson")
-cor.test(standard3$c1, standard3$e1, method ="pearson")
-cor.test(standard3$e2, standard3$e1, method ="pearson")
-cor.test(z_score_CFPS$c1, z_score_CFPS$c2, method ="pearson")
-cor.test(z_score_CFPS$c1, z_score_CFPS$e1, method ="pearson")
-cor.test(z_score_CFPS$e2, z_score_CFPS$e1, method ="pearson")
-################################END################################
 
 #------------------Correlation relationship between standardized SES score-----------------
 # correlation matrix of standardized data
