@@ -1,7 +1,7 @@
 ##################################################################################################################
 ##################################################################################################################
 ###                                                                                                            ###
-###                 R script for Flexibility of SES project                                                    ###
+###                 The 2nd R script for Flexibility of SES project                                            ###
 ###                           [Correlation analysis]                                                           ###
 ###               Email = hcp4715@gmail.com       cyq_2016@outlook.com                                         ###
 ###                                                                                                            ###
@@ -181,7 +181,7 @@ Corr_CFPS <-  psych::corr.test(SES_mental_CFPS,
 Corr_CFPS_sort <- data.frame(Corr_CFPS$ci) %>%
   dplyr::arrange(r)
 
-psych::alpha(SES_mental_CFPS[, 3:13])$total$average_r # 0.58802
+psych::alpha(SES_mental_CFPS[, 3:ncol(SES_mental_CFPS)])$total$average_r # 0.58802
 
 # -------------plot CFPS-------------
 ## draw plot
@@ -189,8 +189,8 @@ psych::alpha(SES_mental_CFPS[, 3:13])$total$average_r # 0.58802
 corrplot_CFPS <- corrplot::corrplot.mixed(Corr_CFPS$r, p.mat = Corr_CFPS$p, insig = "blank",sig.level = 0.05,
                          cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
 # extract only SES variables
-cormatrix_cfps_ses <- Corr_CFPS$r[3:13, 3:13]
-pmatrix_cfps_ses <- Corr_CFPS$p[3:13, 3:13]
+cormatrix_cfps_ses <- Corr_CFPS$r[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
+pmatrix_cfps_ses <- Corr_CFPS$p[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
 
 # plot only SES variables
 corrplot_CFPS_SES <- corrplot::corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
@@ -276,8 +276,8 @@ corrplot_PSID <- corrplot::corrplot.mixed(Corr_PSID$r, p.mat = Corr_PSID$p, insi
                                cl.lim = c(-0.08, 1), tl.cex = 0.8, number.cex = 0.8)
 
 # extract only SES variables
-cormatrix_psid_ses <-Corr_PSID$r[3:10, 3:10]
-pmatrix_psid_ses <- Corr_PSID$p[3:10, 3:10]
+cormatrix_psid_ses <-Corr_PSID$r[3:ncol(Corr_PSID$r), 3:ncol(Corr_PSID$r)]
+pmatrix_psid_ses <- Corr_PSID$p[3:ncol(Corr_PSID$p), 3:ncol(Corr_PSID$p)]
 
 # plot correlation of only SES variables
 corrplot_PSID_SES <- corrplot::corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses, insig = "blank", sig.level = 0.05,
@@ -357,11 +357,11 @@ dev.off()
 # ---------------------------------------------------------------------------------------
 
 # extract correlation between SES and mental health variables
-table_ses_mental_cfps <- Corr_CFPS$r[3:13,1:2]
-table_ses_mental_cfps_p <- Corr_CFPS$p[3:13,1:2]
+table_ses_mental_cfps <- Corr_CFPS$r[3:ncol(Corr_CFPS$r),1:2]
+table_ses_mental_cfps_p <- Corr_CFPS$p[3:ncol(Corr_CFPS$r),1:2]
 
-table_ses_mental_psid <- Corr_PSID$r[3:10,1:2]
-table_ses_mental_psid_p<- Corr_PSID$p[3:10, 1:2]
+table_ses_mental_psid <- Corr_PSID$r[3:ncol(Corr_PSID$r),1:2]
+table_ses_mental_psid_p<- Corr_PSID$p[3:ncol(Corr_PSID$r), 1:2]
 
 save(Corr_CFPS, Corr_PSID, file = "correlation_matrix.RData")
 write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
