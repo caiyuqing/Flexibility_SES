@@ -58,7 +58,7 @@ dfc0 <- read.csv("data/2010child_new.csv", header=T, fileEncoding="UTF-8-BOM")  
 dfa0 <- read.csv("data/2010adult_new.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 adults' dataset
 dff0 <- read.csv("data/2010family_new.csv", header=T, fileEncoding="UTF-8-BOM")  # CFPS 2010 family' dataset
 dfcom0 <- read.csv("data/2010community_new.csv", header= T, fileEncoding="UTF-8-BOM")  # CFPS 2010 community' dataset
-dffr0 <- read.csv("data/2010familyroster_new.csv", header =T, fileEncoding = "UTF-8-BOM")
+dffr0 <- read.csv("data/2010familyroster_new.csv", header =T, fileEncoding = "UTF-8-BOM") # CFPS 2010 family roster dataset
 
 # convert all the column names to lower cases
 names(dfc0)<- tolower(names(dfc0))

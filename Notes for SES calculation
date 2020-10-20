@@ -1,0 +1,19 @@
+A summary of shared usage of data processing:
+1. poverty line：
+* in China, divide urban and rural poverty line in 2010
+    rural area: use "poverty line" (total family income (year) CNY1274/per person)
+    urban area: use "The total income of poverty-stricken urban citizens (5%) per person" in 2010 (see https://data.stats.gov.cn/easyquery.htm?cn=C01&zb=A0A0802&sj=2010): (total family income (year) CNY5483.1/per person)
+* in America, poverty line is different for different family size: poverty line in 2017 = 12060 +  (familysize-1)*4180
+  dplyr::mutate(FPL = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1)) %>%   # calculate FPL
+  
+  dplyr::mutate(poverty = 12060 +  (familysize-1)*4180) %>%  # calculate poverty line for every family
+  dplyr::mutate(FPL = fincome/poverty) %>%   # calculate FPL according to poverty line
+  
+2. median income
+Note: in HUD, highest family income acquire public assistance is 50% of the median family income
+      USA (2017): https://www.ocpp.org/poverty/2017-median-income/
+      China (2010): not find median income data, use median income (rural and urban) reported in the technical report of CFPS (but did not adjust for familysize, same problem as before)
+      income = family income/50% median family income of the country
+family size adjust (HUB)
+1    2   3   4    5      6      7     8      
+70%	80%	90%	Base	108%	116%	124%	132%
