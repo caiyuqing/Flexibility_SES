@@ -54,10 +54,10 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 
 # read data
 # added fileEncoding to avoid junk text in the 1st colname
-dfc0 <- read.csv("data/2010child_new.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 children's dataset
-dfa0 <- read.csv("data/2010adult_new.csv", header=T, fileEncoding="UTF-8-BOM") #CFPS 2010 adults' dataset
-dff0 <- read.csv("data/2010family_new.csv", header=T, fileEncoding="UTF-8-BOM")#CFPS 2010 family' dataset
-dfcom0 <- read.csv("data/2010community_new.csv", header= T, fileEncoding="UTF-8-BOM")  #CFPS 2010 community' dataset
+dfc0 <- read.csv("data/2010child_new.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 children's dataset
+dfa0 <- read.csv("data/2010adult_new.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 adults' dataset
+dff0 <- read.csv("data/2010family_new.csv", header=T, fileEncoding="UTF-8-BOM")  # CFPS 2010 family' dataset
+dfcom0 <- read.csv("data/2010community_new.csv", header= T, fileEncoding="UTF-8-BOM")  # CFPS 2010 community' dataset
 dffr0 <- read.csv("data/2010familyroster_new.csv", header =T, fileEncoding = "UTF-8-BOM")
 
 # convert all the column names to lower cases
