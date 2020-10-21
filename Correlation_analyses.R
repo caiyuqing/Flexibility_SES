@@ -95,12 +95,11 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 
 if (!require(ggcorrplot)) {install.packages("ggcorrplot",repos = "http://cran.us.r-project.org"); require(ggcorrplot)}
 if (!require(corrplot)) {install.packages("corrplot",repos = "http://cran.us.r-project.org"); require(corrplot)}
-if (!require(correlation)) {install.packages("correlation",repos = "http://cran.us.r-project.org"); require(correlation)}
-if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org"); require(ltm)}
-if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
-if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.us.r-project.org"); require(GPArotation)}
+#if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org"); require(ltm)}
+#if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
+#if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.us.r-project.org"); require(GPArotation)}
 if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
-if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
+#if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
 
 # ---------------------------------------------------------------------------------------
 # ---------- 1.  Correlation analysis of CFPS--------------------------------------------
@@ -187,6 +186,9 @@ psych::alpha(SES_mental_CFPS[, 3:ncol(SES_mental_CFPS)])$total$average_r # 0.521
 # plot with mental health variables
 corrplot_CFPS <- corrplot::corrplot.mixed(Corr_CFPS$r, p.mat = Corr_CFPS$p, insig = "blank",sig.level = 0.05,
                          cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+
+# In CFPS, the correlation between c1, i2, i3 and other SES indexes becomes very weird (close to zero!). please check the changes
+
 # extract only SES variables
 cormatrix_cfps_ses <- Corr_CFPS$r[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
 pmatrix_cfps_ses <- Corr_CFPS$p[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
