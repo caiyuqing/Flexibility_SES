@@ -54,11 +54,11 @@ if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project
 
 # read data
 # added fileEncoding to avoid junk text in the 1st colname
-dfc0 <- read.csv("data/2010child_new.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 children's dataset
-dfa0 <- read.csv("data/2010adult_new.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 adults' dataset
-dff0 <- read.csv("data/2010family_new.csv", header=T, fileEncoding="UTF-8-BOM")  # CFPS 2010 family' dataset
-dfcom0 <- read.csv("data/2010community_new.csv", header= T, fileEncoding="UTF-8-BOM")  # CFPS 2010 community' dataset
-dffr0 <- read.csv("data/2010familyroster_new.csv", header =T, fileEncoding = "UTF-8-BOM") # CFPS 2010 family roster dataset
+dfc0 <- read.csv("data/2010child_cfpsv37.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 children's dataset
+dfa0 <- read.csv("data/2010adult_cfpsv37.csv", header=T, fileEncoding="UTF-8-BOM")   # CFPS 2010 adults' dataset
+dff0 <- read.csv("data/2010family_cfpsv37.csv", header=T, fileEncoding="UTF-8-BOM")  # CFPS 2010 family' dataset
+dfcom0 <- read.csv("data/2010community_cfpsv37.csv", header= T, fileEncoding="UTF-8-BOM")  # CFPS 2010 community' dataset
+dffr0 <- read.csv("data/2010familyroster_cfpsv37.csv", header =T, fileEncoding = "UTF-8-BOM") # CFPS 2010 family roster dataset
 
 # convert all the column names to lower cases
 names(dfc0)<- tolower(names(dfc0))
@@ -160,6 +160,7 @@ df.family <- dff0 %>%
                 faminc_net, # total family income (adjusted, net) = finc+welfare+fproperty+firm+felse+net_agri
                 faminc_net_old, # total family income (not adjusted, net) = finc+welfare+fproperty+firm+felse+max(fk5,fk3-fk4)
                 faminc_old, # total family income (not adjusted) = finc+welfare+fproperty+firm+felse+fk3
+                indinc,
                 finc, # family income (salary)
                 inc_agri,	# Adjusted total agricultural income
                 net_agri,	# Adjusted net agricultural income
@@ -221,8 +222,6 @@ df.family <- dff0 %>%
                 fh6_max,	# Upper limit of total expenditures last year
                 fh6_min,	# Lower limit of total expenditures last year
                 fh601, # Total expenditures last year(yuan))
-                ### family size
-                familysize, # family size
                 ### household environment
                 fd1, # House ownership
                 fd102,	# Built the house or bought it

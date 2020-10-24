@@ -176,7 +176,7 @@ SES_mental_CFPS <- dplyr::left_join(dataframes_cfps, mental_CFPS, by = "pid", al
 Corr_CFPS <-  psych::corr.test(SES_mental_CFPS, 
                               use = "pairwise", method="spearman", adjust="holm", 
                               alpha=.05, ci=TRUE, minlength=5)
-
+Corr_CFPS$r
 Corr_CFPS_sort <- data.frame(Corr_CFPS$ci) %>%
   dplyr::arrange(r)
 

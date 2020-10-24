@@ -126,7 +126,6 @@ df.CFPS <- df.children %>%
   dplyr::na_if(., -2) %>% # set all the '-2' as NA (in CFPS -2 means "I don't want to answer"
   dplyr::na_if(., -7) %>% # set all the '-7' as NA (in CFPS -7 means "did not answer clearly. cannot categorize")
   dplyr::na_if(., -9) # set all the '-9' as NA (in CFPS -9 means "missing value"
-  
 # check the data
 summary(df.CFPS)
 
@@ -154,7 +153,7 @@ df.CFPS_child <- df.CFPS %>%
                 eduy_f = cfps2010eduy_best)
 
 # check data
-summary(df.CFPS_child$meduc)
+summary(df.CFPS_child)
 
 # save the data of children (CFPS) as rdata for further processing
 save(df.CFPS_child, file = "df.CFPS_child.RData")
@@ -472,7 +471,29 @@ summary(qiu_PSID$SES_qiu_psid)
 kim_CFPS <- df.CFPS_child %>%
   dplyr::mutate(INR = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1))  %>%    # calculate INR 
   dplyr::mutate(INR = log10(INR)) %>%   # calculate INR 
-  dplyr::mutate(SES_kim_cfps = ifelse(!is.finite(INR), NA, INR))  # set infinite value as NA
+  dplyr::mutate(SES_kim_cfps = ifelse(!is.finite(INR), NA, INR)) %>% # set infinite value as NA
+  dplyr::select(SES_kim_cfps,pid)
+
+############################################
+################delete later################
+############################################
+romeo1_tmp <- romeo1_CFPS[, c("SES_romeo1_cfps", "pid")]
+tmp <- round(drop_na(merge(romeo1_tmp, kim_CFPS, by = "pid", all = FALSE)), digit = 5)
+cor.test(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, method = "spearman", use = "pairwise")
+
+plot(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, main="Scatterplot i2 & c5", 
+     xlab="i2 ", ylab="c5", pch = 20, cex = 0.4)
+?plot
+
+library(hexbin)
+
+bin<-hexbin(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, xbins=50) 
+plot(bin, main="Hexagonal Binning")
+##################################################
+##################################################
+##################################################
+##################################################
+
 # check SES score
 summary(kim_CFPS$SES_kim_cfps)
 
@@ -490,7 +511,7 @@ summary(kim_PSID$SES_kim_psid)
 
 ## CFPS ##
 hanson_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(FPL = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1)) %>%   # calculate FPL
+  dplyr::mutate(FPL = ifelse(urban ==0, (indinc)/1274, (indinc)/5483.1)) %>%   # calculate FPL
   dplyr::mutate(SES_hanson_cfps = cut(FPL, breaks = c(0, 2, 4, Inf), labels = c("1", "2", "3")))%>%   #200%, 400% of poverty line as cut point
   dplyr::mutate(SES_hanson_cfps = as.numeric(as.character(SES_hanson_cfps)))  #convert SES score into numeric
 # check SES score
