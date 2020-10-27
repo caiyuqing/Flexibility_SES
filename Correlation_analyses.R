@@ -193,7 +193,7 @@ pmatrix_cfps_ses <- Corr_CFPS$p[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)
 
 # plot only SES variables
 corrplot_CFPS_SES <- corrplot::corrplot.mixed(cormatrix_cfps_ses, p.mat =pmatrix_cfps_ses, insig = "blank", sig.level = 0.05,
-                              cl.lim = c(-0.05, 1), tl.cex = 0.8, number.cex = 0.8)
+                              cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 
 ############### 1.3 Calculate Intra-class correlation coefficient of all the SES variables ###########
 # Here we tried 4 different approaches to transform the SES scores for ICC:
@@ -268,6 +268,8 @@ Corr_PSID <-  psych::corr.test(SES_mental_PSID,
 Corr_PSID_sort <- data.frame(Corr_PSID$ci) %>%
   dplyr::arrange(r)
 
+psych::alpha(SES_mental_PSID[, 3:ncol(SES_mental_PSID)])$total$average_r # 0.6225
+
 # -------------plot PSID-------------
 ## plot correlation of all the variables
 corrplot_PSID <- corrplot::corrplot.mixed(Corr_PSID$r, p.mat = Corr_PSID$p, insig = "blank", sig.level = 0.05,
@@ -341,7 +343,7 @@ opar<-par(no.readonly=T)
 par(mfrow=c(1,2))
 # CFPS
 corrplot::corrplot.mixed(cormatrix_cfps_ses, p.mat = pmatrix_cfps_ses, insig = "blank",sig.level = 0.05,
-               cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
+               cl.lim = c(0, 1), tl.cex = 0.8, number.cex = 0.8)
 mtext("Correlation matrix CFPS", side = 1, line = -1) # text
 # PSID
 corrplot::corrplot.mixed(cormatrix_psid_ses, p.mat = pmatrix_psid_ses, insig = "blank", sig.level = 0.05,
