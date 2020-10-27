@@ -234,12 +234,7 @@ save(df.PSID_child, file = "df.PSID_child.RData")
 #  SES = (ITN + mother's edu)/2
 #  ITN: income-to-need ratio;5 levels of family income according to poverty line 
 #       4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
-#      * in China, divide urban and rural poverty line in 2010
-#           rural area: use "poverty line" (total family income (year) CNY1274/per person)
-#           urban area: use "The total income of poverty-stricken urban citizens (5%) per person" 
-#                       (total family income (year) CNY5483.1/per person)
-#         (see https://data.stats.gov.cn/easyquery.htm?cn=C01&zb=A0A0802&sj=2010): 
-#   
+#      * in China, use the rural poverty line as the poverty line for all population
 #      * in America, poverty line depends on family size: poverty line in 2017 = 12060 +  (familysize-1)*4180
 #  Mother's education: in categories, convert education year into 7 categories. see 'Education & Occupation recode.xlsx'
 #
@@ -567,7 +562,7 @@ table(ozer_PSID$SES_ozer_psid)
 
 ## CFPS ##
 knick_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(FPL = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1)) %>%   # calculate FPL
+  dplyr::mutate(FPL = (faminc/familysize)/1274) %>%   # calculate FPL
   dplyr::mutate(SES_knick_cfps_inc = cut(FPL, 
                                          breaks = c(0, 2, 4, Inf), 
                                          labels = c("1", "2", "3")))%>%   #200%, 400% of poverty line as cut point
@@ -809,7 +804,7 @@ summary(ell_PSID$SES_ell_psid_edu)
 ## Note: also measured parents' education level, but not used as SES
 ## CFPS ##
 luby_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(SES_luby_cfps_inc = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1)) %>%   # calculate itn
+  dplyr::mutate(SES_luby_cfps_inc = (faminc/familysize)/1274) %>%   # calculate itn
   dplyr::mutate(edu_f_recode = cut(feduc, 
                                    breaks = c(-0.01, 3.5,4.5,5.5, 6.5,8.5), 
                                    labels = c("1","2", "3", "4", "5")),
@@ -844,7 +839,7 @@ summary(luby_PSID$SES_luby_psid_edu)
 ##      education: average number of years of parents
 ## CFPS ##
 noble2_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(SES_noble2_cfps_inc = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1)) %>%   # calculate itn
+  dplyr::mutate(SES_noble2_cfps_inc = (faminc/familysize)/1274) %>%   # calculate itn
   dplyr::mutate(SES_noble2_cfps_edu = (eduy_m + eduy_f)/2)
 summary(noble2_CFPS$SES_noble2_cfps_edu)
 summary(noble2_CFPS$SES_noble2_cfps_inc)
