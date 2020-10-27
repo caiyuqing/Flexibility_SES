@@ -115,6 +115,7 @@ df.individual <- dfa0 %>%
   dplyr::select(pid, fid, pid_f, pid_m, # pid, fid, pid of father, pid of mother
                 gender, # gender
                 qa1age, # age
+                urban,
                 # education
                 cfps2010edu_best,# highest level of education (completed): with 8 levels
                 cfps2010eduy_best, # education year: 0-22

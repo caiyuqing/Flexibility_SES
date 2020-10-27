@@ -246,13 +246,9 @@ save(df.PSID_child, file = "df.PSID_child.RData")
 # Note: in CFPS and PSID, cannot distinguish "Technical/Vocational (3);some college (4)" levels. Only 6 levels
 ## CFPS ##
 betan_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(itn = ifelse(urban == 0, 
-                             base::cut(faminc/familysize,
+  dplyr::mutate(itn = base::cut(faminc/familysize,
                                        breaks = c(-0.00001, 1274, 1274*2, 1274*3, 1274*4, Inf), 
-                                       labels = c("1", "2", "3", "4", "5")),
-                             base::cut(faminc/familysize, 
-                                       breaks = c(-0.00001, 5483.1, 5483.1*2, 5483.1*3, 5483.1*4, Inf), 
-                                       labels = c("1", "2", "3", "4", "5")))) %>%   # set the ITN for every individual
+                                       labels = c("1", "2", "3", "4", "5"))) %>%
   # set 7 levels for mother's education
   dplyr::mutate(edu_m_recode = base::cut(eduy_m, 
                                          breaks = c(-0.01, 9.5, 12.5, 13.5, 14.5, 16.5, 22.5), 
@@ -469,30 +465,10 @@ summary(qiu_PSID$SES_qiu_psid)
 
 ## CFPS ##
 kim_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(INR = ifelse(urban ==0, (faminc/familysize)/1274, (faminc/familysize)/5483.1))  %>%    # calculate INR 
+  dplyr::mutate(INR =  (faminc/familysize)/1274)  %>%    # calculate INR 
   dplyr::mutate(INR = log10(INR)) %>%   # calculate INR 
   dplyr::mutate(SES_kim_cfps = ifelse(!is.finite(INR), NA, INR)) %>% # set infinite value as NA
   dplyr::select(SES_kim_cfps,pid)
-
-############################################
-################delete later################
-############################################
-romeo1_tmp <- romeo1_CFPS[, c("SES_romeo1_cfps", "pid")]
-tmp <- round(drop_na(merge(romeo1_tmp, kim_CFPS, by = "pid", all = FALSE)), digit = 5)
-cor.test(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, method = "spearman", use = "pairwise")
-
-plot(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, main="Scatterplot i2 & c5", 
-     xlab="i2 ", ylab="c5", pch = 20, cex = 0.4)
-?plot
-
-library(hexbin)
-
-bin<-hexbin(tmp$SES_kim_cfps, tmp$SES_romeo1_cfps, xbins=50) 
-plot(bin, main="Hexagonal Binning")
-##################################################
-##################################################
-##################################################
-##################################################
 
 # check SES score
 summary(kim_CFPS$SES_kim_cfps)
@@ -511,7 +487,7 @@ summary(kim_PSID$SES_kim_psid)
 
 ## CFPS ##
 hanson_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(FPL = ifelse(urban ==0, (indinc)/1274, (indinc)/5483.1)) %>%   # calculate FPL
+  dplyr::mutate(FPL = (faminc/familysize)/1274) %>%   # calculate FPL
   dplyr::mutate(SES_hanson_cfps = cut(FPL, breaks = c(0, 2, 4, Inf), labels = c("1", "2", "3")))%>%   #200%, 400% of poverty line as cut point
   dplyr::mutate(SES_hanson_cfps = as.numeric(as.character(SES_hanson_cfps)))  #convert SES score into numeric
 # check SES score

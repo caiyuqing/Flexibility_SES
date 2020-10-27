@@ -180,7 +180,7 @@ Corr_CFPS$r
 Corr_CFPS_sort <- data.frame(Corr_CFPS$ci) %>%
   dplyr::arrange(r)
 
-psych::alpha(SES_mental_CFPS[, 3:ncol(SES_mental_CFPS)])$total$average_r # 0.4259
+psych::alpha(SES_mental_CFPS[, 3:ncol(SES_mental_CFPS)])$total$average_r # 0.52162
 
 # -------------plot CFPS-------------
 ## draw plot
@@ -222,7 +222,7 @@ m_cfps <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long_cfps)
 # variance explained by different ways of calculating SES:
 CFPS_vcv <- data.frame(VarCorr(m_cfps))
 CFPS_vcv[CFPS_vcv$grp == 'SES', "vcov"]/(CFPS_vcv[CFPS_vcv$grp == 'ID', "vcov"] + CFPS_vcv[CFPS_vcv$grp == 'SES', "vcov"] 
-                                         + CFPS_vcv[CFPS_vcv$grp == 'Residual', "vcov"]) # 0.33288
+                                         + CFPS_vcv[CFPS_vcv$grp == 'Residual', "vcov"]) # 0.44169
 
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Correlation analysis of PSID--------------------------------------------

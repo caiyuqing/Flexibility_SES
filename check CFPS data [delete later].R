@@ -27,6 +27,7 @@ df.individual <- dfa0 %>%
                 meduc, # education level of mother (same coding as educ)
                 qg307egp)	# Occupation classification (EGP)
                 
+
 df.family <- dff0 %>% 
   dplyr::select(# id
     fid, # fid
@@ -131,6 +132,19 @@ i3<- df.CFPS_child %>%
   dplyr::mutate(SES_hanson_cfps = as.numeric(as.character(SES_hanson_cfps)))  #convert SES score into numeric
 # check SES score
 table(i3$SES_hanson_cfps)
+
+# c5 romeo1
+c5 <- df.CFPS_child %>%
+  dplyr::mutate(edu_m_recode = cut(eduy_m, 
+                                     breaks = c(-0.5, 6.5, 9.5,11.5,12.5,14.5,16.5,22.5), 
+                                     labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%  # recode education
+  dplyr::mutate(occu_m_recode = recode(egp_m, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, 
+                                       "7"= 5, "8"= 4, "9"=3, "10"=2, "11"=1,  .default = -8)) %>%  # recode occupation
+  dplyr::na_if(., -8) %>%  # set NA
+  dplyr::mutate(occu_m_recode = as.numeric(as.character(occu_m_recode)),  # convert variables into numeric ones
+                edu_m_recode = as.numeric(as.character(edu_m_recode))) %>%
+  dplyr::mutate(SES_romeo1_cfps = occu_m_recode*5 + edu_m_recode*3)   # calculate composite SES score
+table(c5$SES_romeo1_cfps)
 
 #############################old version#############
 df.individual_old <- dfa0_old %>%
@@ -252,6 +266,18 @@ i3_old<- df.CFPS_child_old %>%
   dplyr::mutate(SES_hanson_cfps_old = as.numeric(as.character(SES_hanson_cfps)))  #convert SES score into numeric
 # check SES score
 table(i3$SES_hanson_cfps)
+
+# c5 
+c5_old <- df.CFPS_child_old %>%
+  dplyr::mutate(edu_m_recode = cut(educ_m, breaks = c(-0.5, 3.5, 5.5,6.5,10.5,13.5,14.5,16.5), labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%  # recode education
+  dplyr::mutate(occu_m_recode = recode(egp_m, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, 
+                                       "7"= 5, "8"= 4, "9"=3, "10"=2, "11"=1,  .default = -8)) %>%  # recode occupation
+  dplyr::na_if(., -8) %>%  # set NA
+  dplyr::mutate(occu_m_recode = as.numeric(as.character(occu_m_recode)),  # convert variables into numeric ones
+                edu_m_recode = as.numeric(as.character(edu_m_recode))) %>%
+  dplyr::mutate(SES_romeo1_cfps_old = occu_m_recode*5 + edu_m_recode*3)   # calculate composite SES score
+table(c5_old$SES_romeo1_cfps_old)
+
 # check correlation between c1 & c1_old; i2 & i2_old; i3 & i3_old
 c1_both <- merge(c1[, c("fid", "pid", "SES_betan_cfps")], c1_old[, c("fid", "pid", "SES_betan_cfps_old")], all = TRUE)
 cor.test(c1_both$SES_betan_cfps, c1_both$SES_betan_cfps_old)
@@ -259,9 +285,11 @@ i2_both <- merge(i2[, c("fid", "pid", "SES_kim_cfps")], i2_old[, c("fid", "pid",
 cor.test(i2_both$SES_kim_cfps, i2_both$SES_kim_cfps_old)
 i3_both <- merge(i3[, c("fid", "pid", "SES_hanson_cfps")], i3_old[, c("fid", "pid", "SES_hanson_cfps_old")], all = TRUE)
 cor.test(i3_both$SES_hanson_cfps, i3_both$SES_hanson_cfps_old)
+c5_both <- merge(c5[, c("fid", "pid", "SES_romeo1_cfps")], c5_old[, c("fid", "pid", "SES_romeo1_cfps_old")], all = TRUE)
+cor.test(c5_both$SES_romeo1_cfps, c5_both$SES_romeo1_cfps_old)
 
 
-# old data, new method
+# old data, old method
 
 # c1 old
 c1_old2 <- df.CFPS_child_old %>%
@@ -291,7 +319,9 @@ i3_old2 <- df.CFPS_child_old %>%
   dplyr::mutate(SES_hanson_cfps_old2 = as.numeric(as.character(SES_hanson_cfps)))  #convert SES score into numeric
 # check SES score
 summary(i3_old2$SES_hanson_cfps_old2)
-  
+
+# c5 old
+c5_old2<-c5_old # c5 does not involve income. method doe not differ
 
 # check correlation between c1 & c1_old; i2 & i2_old; i3 & i3_old
 c1_both2 <- merge(c1[, c("fid", "pid", "SES_betan_cfps")], c1_old2[, c("fid", "pid", "SES_betan_cfps_old2")], all = TRUE)
@@ -300,6 +330,70 @@ i2_both2 <- merge(i2[, c("fid", "pid", "SES_kim_cfps")], i2_old2[, c("fid", "pid
 cor.test(i2_both2$SES_kim_cfps, i2_both2$SES_kim_cfps_old2)
 i3_both2 <- merge(i3[, c("fid", "pid", "SES_hanson_cfps")], i3_old2[, c("fid", "pid", "SES_hanson_cfps_old2")], all = TRUE)
 cor.test(i3_both2$SES_hanson_cfps, i3_both2$SES_hanson_cfps_old2)
+
+
+### correlation between i2/i3 & c5
+# new data, new method
+i2_c5 <- merge(i2[, c("fid", "pid", "SES_kim_cfps", "urban")], c5[, c("fid", "pid", "SES_romeo1_cfps", "urban")], all = TRUE)
+cor.test(i2_c5$SES_kim_cfps, i2_c5$SES_romeo1_cfps, method = "spearman")
+
+i2_c5_urban <- i2_c5 %>%
+  dplyr::filter(urban ==1)
+summary(i2_c5_urban$SES_kim_cfps)
+summary(i2_c5_urban$SES_romeo1_cfps)
+i2_c5_rural <- i2_c5 %>%
+  dplyr::filter(urban ==0)
+summary(i2_c5_rural$SES_kim_cfps)
+summary(i2_c5_rural$SES_romeo1_cfps)
+
+cor.test(i2_c5_urban$SES_kim_cfps, i2_c5_urban$SES_romeo1_cfps, method = "spearman")
+cor.test(i2_c5_rural$SES_kim_cfps, i2_c5_rural$SES_romeo1_cfps, method = "spearman")
+
+# old data, new method
+i2_c5_old <- merge(i2_old[, c("fid", "pid", "SES_kim_cfps_old", "urban")], c5_old[, c("fid", "pid", "SES_romeo1_cfps_old")], all = TRUE)
+cor.test(i2_c5_old$SES_kim_cfps_old, i2_c5_old$SES_romeo1_cfps_old,method = "spearman")
+i2_c5_old_urban <- i2_c5_old %>%
+  dplyr::filter(urban ==1)
+i2_c5_old_rural <- i2_c5_old %>%
+  dplyr::filter(urban ==0)
+cor.test(i2_c5_old_urban$SES_kim_cfps_old, i2_c5_old_urban$SES_romeo1_cfps_old, method = "spearman")
+cor.test(i2_c5_old_rural$SES_kim_cfps_old, i2_c5_old_rural$SES_romeo1_cfps_old, method = "spearman")
+
+
+# old data, old method
+i2_c5_old2 <- merge(i2_old2[, c("fid", "pid", "SES_kim_cfps_old2", "urban")], c5_old2[, c("fid", "pid", "SES_romeo1_cfps_old")], all = TRUE)
+cor.test(i2_c5_old2$SES_kim_cfps_old2, i2_c5_old2$SES_romeo1_cfps_old,method = "spearman")
+
+i2_c5_old2_urban <- i2_c5_old2 %>%
+  dplyr::filter(urban ==1)
+i2_c5_old2_rural <- i2_c5_old2 %>%
+  dplyr::filter(urban ==0)
+cor.test(i2_c5_old2_urban$SES_kim_cfps_old2, i2_c5_old2_urban$SES_romeo1_cfps_old, method = "spearman")
+cor.test(i2_c5_old2_rural$SES_kim_cfps_old2, i2_c5_old2_rural$SES_romeo1_cfps_old, method = "spearman")
+
+#check correlation between SES and income (indinc = faminc/familysize)
+cor.test(i2$SES_kim_cfps, i2$indinc,method = "spearman") #0.64
+cor.test(i3$SES_hanson_cfps, i3$indinc,method = "spearman") #0.56
+cor.test(c1$SES_betan_cfps, c1$indinc,method = "spearman") #0.65
+cor.test(c5$SES_romeo1_cfps, c5$indinc, method = "spearman") #0.46
+
+# c5 new data, old method: I think the problem is the new method.
+i2_newdata_oldmethod <- df.CFPS_child %>%
+  dplyr::mutate(INR = faminc/1274)  %>%    # calculate INR 
+  dplyr::mutate(INR = log10(INR)) %>%   # calculate INR 
+  dplyr::mutate(SES_kim_cfps_newdata_oldmethod = ifelse(!is.finite(INR), NA, INR))  # set infinite value as NA
+summary(i2_newdata_oldmethod$SES_kim_cfps_newdata_oldmethod)
+i2_newdata_bothmethod <- merge(i2[, c("fid", "SES_kim_cfps", "urban")], i2_newdata_oldmethod[,c("fid", "SES_kim_cfps_newdata_oldmethod")], all = TRUE)
+cor.test(i2_newdata_bothmethod$SES_kim_cfps, i2_newdata_bothmethod$SES_kim_cfps_newdata_oldmethod, method = "spearman")
+i2_c5_newdata_oldmethod <-merge(i2_newdata_oldmethod[, c("pid", "SES_kim_cfps_newdata_oldmethod", "urban")], c5[, c("pid", "SES_romeo1_cfps")], all = TRUE)
+cor.test(i2_c5_newdata_oldmethod$SES_kim_cfps_newdata_oldmethod, i2_c5_newdata_oldmethod$SES_romeo1_cfps, method = "spearman")
+i2_c5_newdata_oldmetod_urban <- i2_c5_newdata_oldmethod %>%
+  dplyr::filter(urban ==1)
+i2_c5_newdata_oldmetod_rural <- i2_c5_newdata_oldmethod %>%
+  dplyr::filter(urban ==0)
+cor.test(i2_c5_newdata_oldmetod_urban$SES_kim_cfps_newdata_oldmethod, i2_c5_newdata_oldmetod_urban$SES_romeo1_cfps, method = "spearman")
+cor.test(i2_c5_newdata_oldmetod_rural$SES_kim_cfps_newdata_oldmethod, i2_c5_newdata_oldmetod_rural$SES_romeo1_cfps, method = "spearman")
+
 
 #check whether total family income = average family income * familysize
 # v1: fincome, finc_per
@@ -326,3 +420,25 @@ cor.test(income_all$faminc, income_all$fincome)
 cor.test(income_all$indinc, income_all$finc_per)
 cor.test(income_all$faminc, income_all$finc_per)
 cor.test(income_all$faminc, income_all$indinc)
+
+
+####rural vs urban
+rural_adult <- df.individual %>%
+  dplyr::filter(urban == 0) %>%
+  dplyr::select(cfps2010edu_best, cfps2010eduy_best, cfps2010sch_best,income)
+summary(rural_adult)
+urban_adult <- df.individual %>%
+  dplyr::filter(urban == 1) %>%
+  dplyr::select(cfps2010edu_best, cfps2010eduy_best, cfps2010sch_best,income)
+summary(urban_adult)
+
+rural_family <- df.family %>%
+  dplyr::filter(urban ==0) %>%
+  dplyr::mutate(indinc_std = indinc/1274)%>%
+  dplyr::select(faminc, indinc, indinc_std)
+summary(rural_family)
+urban_family <- df.family %>%
+  dplyr::filter(urban ==1) %>%
+  dplyr::mutate(indinc_std = indinc/5483.1) %>%
+  dplyr::select(faminc, indinc,indinc_std) 
+summary(urban_family)
