@@ -20,9 +20,11 @@
 ###                University Medical Center, 55131 Mainz, Germany;                  ###
 ###                Yuqing Cai, Tsinghua University, 100086, China                    ###
 ###                                                                                  ###
-###  Input data                                                                      ###
-###      Oringinal data of CFPS 2010: csv file: '2010child.csv', '2010adult.csv',    ###
-###                                   '2010family.csv', '2010community.csv'          ###
+###  Input data (v37 of CFPS data)                                                   ###
+###      Oringinal data of CFPS 2010: csv file: '2010child_cfpsv37.csv',             ###
+###                                             '2010adult_cfpsv37.csv',             ###
+###                                   '2010family_cfpsv37.csv',                      ###
+###                                   '2010community_cfpsv37.csv'                    ###
 ###                                                                                  ###
 ###  Output file and Variables:                                                      ###
 ###     'CFPS2010.RData' including four dataframes: 'df.children', 'df.family',      ###
