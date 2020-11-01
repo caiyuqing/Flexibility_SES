@@ -32,7 +32,7 @@
 ### McDermott, 2019	  children	SES_mcder_CFPS (3-66)       NA	                           composite           ###
 ### Romeo, 2018a	    children	SES_romeo1_CFPS (8-66)	    NA	             	             composite           ###
 ### Romeo, 2018b	    children	SES_romeo2_CFPS (-0.39-0.12)SES_romeo2_PSID (-0.39-0.12)   composite           ###
-### Qiu, 2017	        children	SES_qiu_CFPS (10200-298600)	SES_qiu_PSID (-73950~229087)	 income              ###
+### Qiu, 2017	        children	SES_qiu_CFPS (15 -2042105)	SES_qiu_PSID (0~229087)	       income              ###
 ### Kim, 2019	        children	SES_kim_CFPS (-3.88~2.51)	  SES_kim_PSID (-3.65-2.01)	     poverty(income)     ###
 ### Hanson, 2013	    children	SES_hanson_CFPS (1，2，3)	  SES_hanson_PSID (1，2，3)	     poverty(income)     ###
 ### Leonard, 2019	    children	SES_leo_CFPS (1，2)	        SES_leo_PSID (1，2)		         education           ###
@@ -75,12 +75,12 @@
 
 
 ######################## Start of the script ###########################
-### clean the memory to avoid unnecessary errors:
-rm(list = ls())
+
+rm(list = ls())                     # clean the memory to avoid unnecessary errors
 Sys.setlocale("LC_ALL", "English")  # set local encoding to English
-Sys.setenv(LANG = "en") # set the feedback language to English
-options(scipen = 999)   # force R to output in decimal instead of scientifc notion
-options(digits=5)       # limit the number of reporting
+Sys.setenv(LANG = "en")             # set the feedback language to English
+options(scipen = 999)               # force R to output in decimal instead of scientifc notion
+options(digits=5)                   # limit the number of reporting
 
 ### set directoRy to the folder of analytic data
 curWD <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -91,15 +91,15 @@ if (!require(tidyverse)) {install.packages("tidyverse",repos = "http://cran.us.r
 if (!require(lessR)) {install.packages("lessR",repos = "http://cran.us.r-project.org"); require(lessR)}
 if (!require(lme4)) {install.packages("lme4",repos = "http://cran.us.r-project.org"); require(lme4)}
 if (!require(psych)) {install.packages("psych",repos = "http://cran.us.r-project.org"); require(psych)}
-# if (!require(jtools)) {install.packages("jtools",repos = "http://cran.us.r-project.org"); require(jtools)}
-
 if (!require(ggcorrplot)) {install.packages("ggcorrplot",repos = "http://cran.us.r-project.org"); require(ggcorrplot)}
 if (!require(corrplot)) {install.packages("corrplot",repos = "http://cran.us.r-project.org"); require(corrplot)}
+if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
+if (!require(jtools)) {install.packages("jtools",repos = "http://cran.us.r-project.org"); require(jtools)}
+#if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
 #if (!require(ltm)) {install.packages("ltm",repos = "http://cran.us.r-project.org"); require(ltm)}
 #if (!require(magicfor)) {install.packages("magicfor",repos = "http://cran.us.r-project.org"); require(magicfor)}
 #if (!require(GPArotation)) {install.packages("GPArotation",repos = "http://cran.us.r-project.org"); require(GPArotation)}
-if (!require(reshape2)) {install.packages("reshape2",repos = "http://cran.us.r-project.org"); require(reshape2)}
-#if (!require(irr)) {install.packages("irr",repos = "http://cran.us.r-project.org"); require(irr)}
+
 
 # ---------------------------------------------------------------------------------------
 # ---------- 1.  Correlation analysis of CFPS--------------------------------------------
@@ -165,8 +165,7 @@ SES_mental_CFPS <- dplyr::left_join(dataframes_cfps, mental_CFPS, by = "pid", al
                 # education 1-2
                 e1 = SES_leo_cfps,
                 e2 = SES_ozer_cfps) %>%
-  dplyr::select(c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2))
-# summary(SES_mental_CFPS)
+  dplyr::select(c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2)) # arrange the columns
 
 #-------------cor matrix & p-value matrix CFPS-------------
 # Create a correlation table for all the correlation relationship between variables
@@ -175,20 +174,24 @@ SES_mental_CFPS <- dplyr::left_join(dataframes_cfps, mental_CFPS, by = "pid", al
 Corr_CFPS <-  psych::corr.test(SES_mental_CFPS, 
                               use = "pairwise", method="spearman", adjust="holm", 
                               alpha=.05, ci=TRUE, minlength=5)
-Corr_CFPS$r
-Corr_CFPS_sort <- data.frame(Corr_CFPS$ci) %>%
+Corr_CFPS_sort_ses <- data.frame(Corr_CFPS$ci) %>%
+  tibble::rownames_to_column(., "Pairs") %>%
+  tidyr::separate(Pairs, c('param1', 'param2'), sep = '-') %>%
+  dplyr::filter(!stringr::str_detect(param1, 'cog|dep')) %>%
   dplyr::arrange(r)
 
-psych::alpha(SES_mental_CFPS[, 3:ncol(SES_mental_CFPS)])$total$average_r # 0.52162
+Corr_CFPS_sort_ses_others <- data.frame(Corr_CFPS$ci) %>%
+  tibble::rownames_to_column(., "Pairs") %>%
+  tidyr::separate(Pairs, c('param1', 'param2'), sep = '-') %>%
+  dplyr::filter(stringr::str_detect(param1, 'cog|dep')) %>%
+  dplyr::filter(!stringr::str_detect(param2, 'cog|dep')) %>%
+  dplyr::arrange(param1, r)
 
 # -------------plot CFPS-------------
 ## draw plot
 # plot with mental health variables
 corrplot_CFPS <- corrplot::corrplot.mixed(Corr_CFPS$r, p.mat = Corr_CFPS$p, insig = "blank",sig.level = 0.05,
                          cl.lim = c(-0.12, 1), tl.cex = 0.8, number.cex = 0.8)
-
-# In CFPS, the correlation between c1, i2, i3 and other SES indexes becomes very weird (close to zero!). please check the changes
-
 # extract only SES variables
 cormatrix_cfps_ses <- Corr_CFPS$r[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
 pmatrix_cfps_ses <- Corr_CFPS$p[3:ncol(SES_mental_CFPS), 3:ncol(SES_mental_CFPS)]
@@ -219,7 +222,7 @@ data_long_cfps <- SES_mental_CFPS_trans %>%
 
 m_cfps <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long_cfps)
 
-# jtools::summ(m1)  # ICC of ID: 0.00; ICC of SES: 0.48
+jtools::summ(m_cfps)  # ICC of ID: 0.23; ICC of SES: 0.44
 
 # variance explained by different ways of calculating SES:
 CFPS_vcv <- data.frame(VarCorr(m_cfps))
@@ -267,11 +270,20 @@ SES_mental_PSID <- dplyr::left_join(dataframes_psid, mental_PSID, by = "pid", al
 Corr_PSID <-  psych::corr.test(SES_mental_PSID, 
                                use = "pairwise", method="spearman", adjust="holm", 
                                alpha=.05, ci=TRUE, minlength=5)
-Corr_PSID_sort <- data.frame(Corr_PSID$ci) %>%
+
+Corr_PSID_sort_ses <- data.frame(Corr_PSID$ci) %>%
+  tibble::rownames_to_column(., "Pairs") %>%
+  tidyr::separate(Pairs, c('param1', 'param2'), sep = '-') %>%
+  dplyr::filter(!stringr::str_detect(param1, 'satis|dep')) %>%
   dplyr::arrange(r)
 
-psych::alpha(SES_mental_PSID[, 3:ncol(SES_mental_PSID)])$total$average_r # 0.6225
-
+Corr_PSID_sort_ses_others <- data.frame(Corr_PSID$ci) %>%
+  tibble::rownames_to_column(., "Pairs") %>%
+  tidyr::separate(Pairs, c('param1', 'param2'), sep = '-') %>%
+  dplyr::filter(stringr::str_detect(param1, 'satis|dep')) %>%
+  dplyr::filter(!stringr::str_detect(param2, 'satis|dep')) %>%
+  dplyr::arrange(param1,r)
+  
 # -------------plot PSID-------------
 ## plot correlation of all the variables
 corrplot_PSID <- corrplot::corrplot.mixed(Corr_PSID$r, p.mat = Corr_PSID$p, insig = "blank", sig.level = 0.05,
@@ -304,7 +316,7 @@ data_long_psid <- SES_mental_PSID_trans %>%
 
 m_psid <- lme4::lmer(score ~ 1 + (1|ID) + (1|SES) , data=data_long_psid)
 
-# jtools::summ(m1)  # ICC of ID: 0.00; ICC of SES: 0.48
+jtools::summ(m_psid)  # ICC of ID: 0.41; ICC of SES: 0.21
 
 # variance explained by different ways of calculating SES:
 PSID_vcv <- data.frame(VarCorr(m_psid))
@@ -366,6 +378,10 @@ table_ses_mental_psid <- Corr_PSID$r[3:ncol(Corr_PSID$r),1:2]
 table_ses_mental_psid_p<- Corr_PSID$p[3:ncol(Corr_PSID$r), 1:2]
 
 save(Corr_CFPS, Corr_PSID, file = "correlation_matrix.RData")
-write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
-write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
+format(Corr_CFPS_sort_ses_others, scientific=FALSE,digits = 5, nsmall = 5)
+format(Corr_PSID_sort_ses_others, scientific=FALSE,digits = 5, nsmall = 5)
+write.csv(Corr_CFPS_sort_ses_others, file = "table_ses_cfps.csv", row.names = F)
+write.csv(Corr_PSID_sort_ses_others, file = "table_ses_psid.csv", row.names = F)
+# write.csv(round(table_ses_mental_cfps, digits = 3), file = "table_ses_cfps.csv")
+# write.csv(round(table_ses_mental_psid, digits = 3), file = "table_ses_psid.csv")
 
