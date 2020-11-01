@@ -35,7 +35,7 @@
 ### McDermott, 2019	  children	SES_mcder_CFPS (3-66)       NA	                           composite           ###
 ### Romeo, 2018a	    children	SES_romeo1_CFPS (8-66)	    NA	             	             composite           ###
 ### Romeo, 2018b	    children	SES_romeo2_CFPS (-0.39-0.12)SES_romeo2_PSID (-0.39-0.12)   composite           ###
-### Qiu, 2017	        children	SES_qiu_CFPS (10200-298600)	SES_qiu_PSID (-73950~229087)	 income              ###
+### Qiu, 2017	        children	SES_qiu_CFPS (15 -2042105)	SES_qiu_PSID (0~229087)	       income              ###
 ### Kim, 2019	        children	SES_kim_CFPS (-3.88~2.51	  SES_kim_PSID (-3.65-2.01)	     poverty(income)     ###
 ### Hanson, 2013	    children	SES_hanson_CFPS (1，2，3)	  SES_hanson_PSID (1，2，3)	     poverty(income)     ###
 ### Leonard, 2019	    children	SES_leo_CFPS (1，2)	        SES_leo_PSID (1，2)		         education           ###
@@ -79,7 +79,7 @@ rm(list = ls())                     # clean the memory to avoid unnecessary erro
 Sys.setlocale("LC_ALL", "English")  # set local encoding to English
 Sys.setenv(LANG = "en")             # set the feedback language to English
 options(scipen = 999)               # force R to output in decimal instead of scientific notion
-options(digits=5)                   # limit the number of reporting
+options(digits = 5)                 # limit the number of reporting
 
 # set directory to the folder of analytic data
 curWD <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -97,13 +97,14 @@ load("CFPS2010.RData")
 # ---------- 1.  Prepare the CFPS data for later analysis--------------------------------------------
 # ---------------------------------------------------------------------------------------
 ## combine children, adult, family and community data in a data frame
+## Note: only children between 10 and 22 year-old were included.
 df.CFPS <- df.children %>%
   dplyr::full_join(., df.individual) %>%    # merge children and individual data
   dplyr::arrange(fid, pid) %>%              # arrange the sequence of data according to fid and pid
   dplyr::mutate(age = ifelse(is.na(qa1age), wa1age, qa1age)) %>%  # combine age in child datafrome and adult dataframe
   dplyr::mutate(role_c = ifelse(age <= 22 & age >= 10, "child", NA))%>% # select 10-22 years old as child
   dplyr::left_join(., df.family, by = "fid") %>%   # merge with family data
-  dplyr::group_by(fid) %>%   # copy cid to all rows that share the same family id
+  dplyr::group_by(fid) %>%                         # copy cid to all rows that share the same family id
   dplyr::mutate(cid = ifelse(sum(!is.na(cid)) == 0,               
                              NA, cid[!is.na(cid)])) %>%
   dplyr::ungroup() %>%
@@ -125,7 +126,8 @@ df.CFPS <- df.children %>%
   dplyr::na_if(., -1) %>% # set all the '-1' as NA (in CFPS -1 means "I don't know")
   dplyr::na_if(., -2) %>% # set all the '-2' as NA (in CFPS -2 means "I don't want to answer"
   dplyr::na_if(., -7) %>% # set all the '-7' as NA (in CFPS -7 means "did not answer clearly. cannot categorize")
-  dplyr::na_if(., -9) # set all the '-9' as NA (in CFPS -9 means "missing value"
+  dplyr::na_if(., -9)     # set all the '-9' as NA (in CFPS -9 means "missing value"
+
 # check the data
 summary(df.CFPS)
 
@@ -135,7 +137,7 @@ df.CFPS_child <- df.CFPS %>%
   # select one child for every family
   dplyr::group_by(fid) %>% 
   arrange(pid) %>%
-  dplyr::filter(row_number()==1) %>%  # hcp: what is the function of this line?
+  dplyr::filter(row_number()==1) %>%  # chose the first child of the family
   dplyr::ungroup() %>%
   # rename variables of children to distinguish from parents
   dplyr::rename(egp_c = qg307egp, 
@@ -173,7 +175,7 @@ df.map_psid <- foreign::read.spss("GID_map_psid.sav", to.data.frame = TRUE) %>% 
   dplyr::select(pid, pid_f, pid_m)
 
 # load the PSID data
-df.PSID <- foreign::read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>% # selecte data from PSID website
+df.PSID <- foreign::read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>% # select data from PSID website
   dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% # generate a new column for unique pid for each individual.
   # rename frequently used variables
   dplyr::rename(fid = ER34501,
@@ -230,7 +232,7 @@ save(df.PSID_child, file = "df.PSID_child.RData")
 # ---------------------------------------------------------------------------------------
 
 ####### Betancourt, L, 2016 (CFPS & PSID)###########
-#  Subject: neuronates
+#  Subject: neonates
 #  SES = (ITN + mother's edu)/2
 #  ITN: income-to-need ratio;5 levels of family income according to poverty line 
 #       4 cut-point: itn1 = poverty line, itn4 = 400% above poverty line, rest two set between itn1 and itn4)
@@ -259,7 +261,7 @@ table(betan_CFPS$SES_betan_cfps)
 betan_PSID <- df.PSID_child %>%
   dplyr::mutate(edu_m_recode = cut(edu_m, 
                                    breaks = c(-0.01, 9.5, 12.5, 13.5, 14.5, 16.5, 17.5, 100), 
-                                   labels = c("1", "2", "3", "4", "5", "6", NA)),  # set 7 levels for mtoher's education
+                                   labels = c("1", "2", "3", "4", "5", "6", NA)),  # set 7 levels for mother's education
                 edu_m_recode = as.numeric(as.character(edu_m_recode))) %>% 
   # set the poverty line for every family: poverty line 12060 for one people and increase 4180 for an extra person
   dplyr::mutate(itn1 = 12060 +  (familysize-1)*4180) %>% 
@@ -285,9 +287,11 @@ table(betan_PSID$SES_betan_psid)
 #        PSID: convert to equivalence in US 2010
 ## CFPS ##
 moog_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(edu_cat = dplyr::recode_factor(meduc, "1" = 1,"2" = 1,"3" = 1,"4" = 2,"5" = 3,"6" = 4,"7" = 5,"8" = 5))  %>% # recode education
+  dplyr::mutate(edu_cat = dplyr::recode_factor(meduc, "1" = 1,"2" = 1,"3" = 1,
+                                               "4" = 2,"5" = 3,"6" = 4,"7" = 5,"8" = 5))  %>% # recode education
   dplyr::mutate(income_cat = base::cut(faminc, #recode income, 
-                               breaks= c(-0.01, 15000*1.013*3.329, 45000*1.013*3.329, 75000*1.013*3.329, 100000*1.013*3.329, 300000), 
+                               breaks= c(-0.01, 15000*1.013*3.329, 45000*1.013*3.329, 
+                                         75000*1.013*3.329, 100000*1.013*3.329, 300000), 
                                labels = c("1", "2", "3", "4", "5"))) %>% 
   dplyr::mutate(income_cat = as.numeric(as.character(income_cat)),# convert income and education into numeric variables
                 edu_cat = as.numeric(as.character(edu_cat)))%>% 
@@ -347,12 +351,12 @@ table(jed_CFPS$SES_jed_cfps)
 mcder_CFPS <- df.CFPS_child %>%
   dplyr::mutate(edu_m_recode = cut(eduy_m, 
                                    breaks = c(-0.5, 7.5, 9.5,11.5,12.5,14.5,16.5,22.5), 
-                                   labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%  # recode education  (mother)
+                                   labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%        # recode education  (mother)
   dplyr::mutate(occup_m_recode = recode(egp_m, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, "7"= 5,
                                         "8"= 4, "9"=3, "10"=2, "11"=1, .default = -8)) %>%    # recode occupation  (mother)
   dplyr::mutate(edu_f_recode = cut(eduy_f, 
                                    breaks = c(-0.5, 7.5, 9.5,11.5,12.5,14.5,16.5,22.5), 
-                                   labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%  # recode education  (father)
+                                   labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%        # recode education  (father)
   dplyr::mutate(occup_f_recode = recode(egp_f, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, "7"= 5, 
                                         "8"= 4, "9"=3, "10"=2, "11"=1, .default = -8)) %>%    # recode occupation (father)
   dplyr::na_if(., -8) %>%  # set NA
@@ -360,11 +364,11 @@ mcder_CFPS <- df.CFPS_child %>%
                 occup_m_recode = as.numeric(as.character(occup_m_recode)),
                 edu_f_recode = as.numeric(as.character(edu_f_recode)),
                 edu_m_recode = as.numeric(as.character(edu_m_recode))) %>%
-  dplyr::mutate(SES_f = occup_f_recode*5 + edu_f_recode*3,  # calculate SES of father and mother
+  dplyr::mutate(SES_f = occup_f_recode*5 + edu_f_recode*3,      # calculate SES of father and mother
                 SES_m = occup_m_recode*5 + edu_m_recode*3)%>%
   dplyr::mutate(SES_f = ifelse(is.na(SES_f), SES_m, SES_f),
                 SES_m = ifelse(is.na(SES_m), SES_f, SES_m))%>%  # replace father and mother's ses with each other if one is NA
-  dplyr::mutate(SES_mcder_cfps = (SES_m + SES_f)/2)   # calculate composite SES score
+  dplyr::mutate(SES_mcder_cfps = (SES_m + SES_f)/2)             # calculate composite SES score
 
 # check SES score
 table(mcder_CFPS$SES_mcder_cfps)
@@ -460,8 +464,8 @@ summary(qiu_PSID$SES_qiu_psid)
 
 ## CFPS ##
 kim_CFPS <- df.CFPS_child %>%
-  dplyr::mutate(INR =  (faminc/familysize)/1274)  %>%    # calculate INR 
-  dplyr::mutate(INR = log10(INR)) %>%   # calculate INR 
+  dplyr::mutate(INR = (faminc/familysize)/1274)  %>%    # calculate INR 
+  dplyr::mutate(INR = log10(INR)) %>%                   # calculate INR 
   dplyr::mutate(SES_kim_cfps = ifelse(!is.finite(INR), NA, INR)) %>% # set infinite value as NA
   dplyr::select(SES_kim_cfps,pid)
 
