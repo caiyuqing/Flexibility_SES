@@ -166,7 +166,7 @@ SES_mental_CFPS <- dplyr::left_join(dataframes_cfps, mental_CFPS, by = "pid", al
                 e1 = SES_leo_cfps,
                 e2 = SES_ozer_cfps) %>%
   dplyr::select(c(dep, cog, c1, c2, c3, c4, c5, c6, i1, i2, i3, e1, e2)) # arrange the columns
-
+summary(SES_mental_CFPS)
 #-------------cor matrix & p-value matrix CFPS-------------
 # Create a correlation table for all the correlation relationship between variables
 # used Spearman for all variables

@@ -27,19 +27,19 @@
 ###                                                                                                            ###
 ### Table of output SES scores for each paper                                                                  ###
 ### ------------------------------------------------------------------------------------------------------     ###
-### original paper    subject	  SES_cfps (range)	          SES_psid (range)	             type of SES         ###
+### original paper    subject	  SES_cfps        	          SES_psid       	             type of SES           ###
 ### ------------------------------------------------------------------------------------------------------     ###
-### Betancourt, 2916	children	SES_betan_CFPS (1-6)        SES_betan_PSID (1-5.5)       	 composite           ###
-### Moog, 2008	      children	SES_moog_CFPS (1-5)         SES_mpog_PSID (1-5)	           composite           ###
-### Jednoróg, 2012	  children	SES_jed_CFPS (11-84)        NA	                           composite           ###
-### McDermott, 2019	  children	SES_mcder_CFPS (3-66)       NA	                           composite           ###
-### Romeo, 2018a	    children	SES_romeo1_CFPS (8-66)	    NA	             	             composite           ###
-### Romeo, 2018b	    children	SES_romeo2_CFPS (-0.39-0.12)SES_romeo2_PSID (-0.39-0.12)   composite           ###
-### Qiu, 2017	        children	SES_qiu_CFPS (15 -2042105)	SES_qiu_PSID (0~229087)	       income              ###
-### Kim, 2019	        children	SES_kim_CFPS (-3.88~2.51	  SES_kim_PSID (-3.65-2.01)	     poverty(income)     ###
-### Hanson, 2013	    children	SES_hanson_CFPS (1，2，3)	  SES_hanson_PSID (1，2，3)	     poverty(income)     ###
-### Leonard, 2019	    children	SES_leo_CFPS (1，2)	        SES_leo_PSID (1，2)		         education           ###
-### Ozernov-Palchik	  children	SES_ozer_CFPS (1，2)	      SES_ozer_PSID (1，2)	         education           ###
+### Betancourt, 2916	children	SES_betan_CFPS              SES_betan_PSID     	           composite           ###
+### Moog, 2008	      children	SES_moog_CFPS               SES_mpog_PSID (1-5)	           composite           ###
+### Jednoróg, 2012	  children	SES_jed_CFPS                NA	                           composite           ###
+### McDermott, 2019	  children	SES_mcder_CFPS              NA	                           composite           ###
+### Romeo, 2018a	    children	SES_romeo1_CFPS             NA	             	             composite           ###
+### Romeo, 2018b	    children	SES_romeo2_CFPS             SES_romeo2_PSID                composite           ###
+### Qiu, 2017	        children	SES_qiu_CFPS 	              SES_qiu_PSID                   income              ###
+### Kim, 2019	        children	SES_kim_CFPS 	              SES_kim_PSID                   poverty(income)     ###
+### Hanson, 2013	    children	SES_hanson_CFPS             SES_hanson_PSID 	             poverty(income)     ###
+### Leonard, 2019	    children	SES_leo_CFPS                SES_leo_PSID 	                 education           ###
+### Ozernov-Palchik	  children	SES_ozer_CFPS 	            SES_ozer_PSID                  education           ###
 ### ----------------------------------------------------------------------------------------------------       ###
 ###                                                                                                            ###
 ##################################################################################################################
