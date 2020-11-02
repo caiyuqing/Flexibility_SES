@@ -117,7 +117,7 @@ df.individual <- dfa0 %>%
   dplyr::select(pid, fid, pid_f, pid_m, # pid, fid, pid of father, pid of mother
                 gender, # gender
                 qa1age, # age
-                urban,
+                urban,  # region (rural = 0; urban =1)
                 # education
                 cfps2010edu_best,  # highest level of education (completed): with 8 levels
                 cfps2010eduy_best, # education year: 0-22
@@ -163,20 +163,15 @@ df.family <- dff0 %>%
                 faminc_net,     # total family income (adjusted, net) = finc+welfare+fproperty+firm+felse+net_agri
                 faminc_net_old, # total family income (not adjusted net) = finc+welfare+fproperty+firm+felse+max(fk5,fk3-fk4)
                 faminc_old,     # total family income (not adjusted) = finc+welfare+fproperty+firm+felse+fk3
-                indinc,
+                indinc,         # average family income (per family member; adjusted) = faminc/familysize
+                indinc_net,     # average family income (per family member; adjusted net) = faminc/familysize
                 finc,           # family income (salary)
                 inc_agri,	      # Adjusted total agricultural income
                 net_agri,	      # Adjusted net agricultural income
-                finc,	          # Wage income
                 firm,	          # Non-agricultural business income
                 fproperty,	    # property income
                 welfare,	      # transfer income
                 felse,	        # other income
-                faminc_old,     # Unadjusted total family income
-                faminc_net,	    # Adjusted total family income
-                faminc,         # Adjusted net family income
-                indinc,         # Adjusted total family income per capita
-                indinc_net,     # Adjusted net family income per capita
                 foperate,       # Adjusted total operational income (including agricultural and non-agr business)
                 foperate_net,   # Adjusted total operational income (including agricultural and non-agr business)
                 ff6_max,        # Upper limit of total family income last year excluding pension/subsidy (yuan)
@@ -259,8 +254,8 @@ df.children <- dfc0 %>%
                 feduc,             # education level of father (same coding as educ)
                 meduc,             # education level of mother (same coding as educ)
                 ### cognitive ability	
-                wordtest,	
-                mathtest,	
+                wordtest,	         # score of word test
+                mathtest,	         # score of math test
                 ### migrated,	
                 wa5,               # Child's place of house registration same as birthplace
                 ### children living condition	
