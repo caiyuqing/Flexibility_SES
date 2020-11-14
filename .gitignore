@@ -6,3 +6,7 @@ data/
 *.Rproj
 *.Rproj.user
 .Rproj.user
+.ipynb_checkpoints
+.RData
+.DS_Store
+*~$*
