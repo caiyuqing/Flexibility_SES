@@ -163,6 +163,25 @@ summary(df.CFPS_child)
 # save the data of children (CFPS) as rdata for further processing
 save(df.CFPS_child, file = "df.CFPS_child.RData")
 
+# select adult (age 23-60) data for further analysis
+df.CFPS_adult <- df.CFPS %>%
+  dplyr::filter(age >22 & age <= 60)  
+
+# check data
+summary(df.CFPS_adult)
+
+# save the data of adults (CFPS) as rdata for further processing
+save(df.CFPS_adult, file = "df.CFPS_adult.RData")
+
+# select elderly (age > 60)
+df.CFPS_elderly <- df.CFPS %>%
+  dplyr::filter(age > 60)
+
+# check data
+summary(df.CFPS_elderly)
+
+# save the data of elderly (cfps) as rdata for further processing
+save(df.CFPS_elderly, file = "df.CFPS_elderly.Rdata")
 # ---------------------------------------------------------------------------------------
 # ---------- 2.  Prepare the PSID data for later analysis--------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -176,7 +195,9 @@ df.map_psid <- foreign::read.spss("GID_map_psid.sav", to.data.frame = TRUE) %>% 
                 pid_m = ER30001_P_M *1000 + ER30002_P_M) %>% 
   # select only three variables that will be used in the further data analysis to determine family structure
   dplyr::select(pid, pid_f, pid_m)
-
+tmp<-as.data.frame(colnames(df.PSID))
+write.csv(tmp, file = "colnames.csv")
+df.PSID$ER7142
 # load the PSID data
 df.PSID <- foreign::read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>% # select data from PSID website
   dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% # generate a new column for unique pid for each individual.
@@ -192,6 +213,8 @@ df.PSID <- foreign::read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>
                 life_satisfaction = ER66025,
                 sss_rp = ER70879,
                 sss_sp = ER70741) %>%
+  # calculate personal income according the calculation method of family income
+  dplyr::mutate(income = ER71330+ER71391+ER71420+ER71422) %>%
   # calculate family size
   dplyr::group_by(fid) %>%
   dplyr::mutate(familysize = length(fid)) %>%   
@@ -232,6 +255,25 @@ summary(df.PSID_child)
 # save the data as RData for the further analysis
 save(df.PSID_child, file = "df.PSID_child.RData")
 
+# select adults (23-60) data for further analysis
+df.PSID_adult <- df.PSID %>%
+  dplyr::filter(age >22 & age <= 60)
+
+# check data
+summary(df.PSID_adult)
+
+#save the data as RData for further analysis
+save(df.PSID_adult, file = "df.PSID_adult.RData")
+
+# select elderly (age> 60) data for further analysis
+df.PSID_elderly <- df.PSID %>%
+  dplyr:: filter(age >60)
+
+# check data
+summary(df.PSID_elderly)
+
+# save the data as Rdata for further analysis
+save(df.PSID_elderly, file = "df.PSID_elderly.Rdata")
 # ---------------------------------------------------------------------------------------
 # ---------- 3.  Reproduce SES indexes in papers--------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -1000,7 +1042,7 @@ library(FactoMineR)
 library(factoextra)
 yu_CFPS <- df.CFPS_child %>%
   dplyr::mutate(fincome_recode = cut(faminc, 
-                                     breaks = c(-0.01, 5000* 0.868*3.329, 11999* 0.868*3.329, 15999* 0.868*3.329, 24999* 0.868*3.329, 
+                                     breaks = c(-0.01, 5000*0.868*3.329, 11999* 0.868*3.329, 15999* 0.868*3.329, 24999* 0.868*3.329, 
                                                 34999* 0.868*3.329, 49999* 0.868*3.329, 74999* 0.868*3.329,99999* 0.868*3.329, 5000000*0.868*3.329), 
                                      labels = c("4500", "8500", "14000", "20500", "30000", "42500", 
                                                 "62500","875000", "125000"))) %>% #Incomes were  divided into 9 levels, CPI US dollar 2010/2018 = 218.056/251.107 = 0.868; PPP: CNY/US dollar in 2010 = 3.329
@@ -1034,6 +1076,240 @@ yu_cfps <- yu_cfps %>%
 ## cannot calculate because there is no "children" who is also reference person or spouse (only rp and sp have SSS score)
 yu_PSID <- df.PSID_child%>%
   dplyr::filter(relation == 10 & relation ==20) ###
+
+############### Yang, 2016 ##############
+# Subject: young adults
+# SES: family annual income < RMB 5,000; RMB 5,000–15000; RMB 15,001–30,000; RMB 30,001–50,000; RMB 50,001–100, 000; > RMB 100,000. (in six categories and recoded as 1-6)
+#      education: collected in 6 categories and recoded as years (according to chinese and us educational systems respectively)
+# composite: average of z-scores of two variables
+## CFPS ##
+yang_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(fincome_recode = cut(faminc, 
+                                     breaks = c(-0.01, 4999/1.1705, 15000/1.1705, 30000/1.1705, 50000/1.1705, 100000/1.1705, 5000000),
+                                     labels = c("1", "2", "3", "4", "5", "6"))) %>% # CPI 2016 = 627.5, CPI 2010 = 536.1, CPI 2016/CPI 2010 = 1.1705
+  dplyr::mutate(edu_recode = cut(cfps2010edu_best,
+                                 breaks = c(-0.01, 2.5, 3.5, 4.5, 6.5, 8.5),
+                                 labels = c("6", "9", "12", "16", "19"))) %>%
+  dplyr::mutate(fincome_recode = as.numeric(as.character(fincome_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(fincome_zscore = (fincome_recode - mean(fincome_recode, na.rm = TRUE))/sd(fincome_recode, na.rm = TRUE)) %>%  # calculate z-score of family income and education
+  dplyr::mutate(edu_zscore = (edu_recode - mean(edu_recode, na.rm = TRUE))/sd(edu_recode, na.rm = TRUE)) %>%
+  dplyr::mutate(SES_yang_cfps = (fincome_zscore + edu_zscore)/2) 
+summary(yang_CFPS$SES_yang_cfps)
+
+## PSID ##
+yang_PSID <- df.PSID_adult %>%
+  dplyr::mutate(fincome_recode = cut(fincome, 
+                                     breaks = c(-0.01, 4999/1.1705/3.329, 15000/1.1705/3.329, 30000/1.1705/3.329, 50000/1.1705/3.329, 100000/1.1705/3.329, 500000000),
+                                     labels = c("1", "2", "3", "4", "5", "6"))) %>% # CPI 2016 = 627.5, CPI 2010 = 536.1, CPI 2016/CPI 2010 = 1.1705, PPP 2010 China/US = 3.329
+  dplyr::mutate(edu_recode = cut(edu,
+                                 breaks = c(-0.01, 6.5, 8.5, 12.5, 16.5, 18.5, 99),
+                                 labels = c("6", "8", "12", "16", "18", NA))) %>%
+  dplyr::mutate(fincome_recode = as.numeric(as.character(fincome_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(fincome_zscore = (fincome_recode - mean(fincome_recode, na.rm = TRUE))/sd(fincome_recode, na.rm = TRUE)) %>%  # calculate z-score of family income and education
+  dplyr::mutate(edu_zscore = (edu_recode - mean(edu_recode, na.rm = TRUE))/sd(edu_recode, na.rm = TRUE)) %>%
+  dplyr::mutate(SES_yang_psid = (fincome_zscore + edu_zscore)/2) 
+summary(yang_PSID$SES_yang_psid)
+
+#################Johnson, 2013 (only CFPS) ##################
+# Subject: middle aged
+# SES: composite: Hollingshead two-factor: own occupation & highest formal edu (composite = 7*occu + 4* edu)
+#      recode of occupation and education seee education & occupation.xlsx
+johnson_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(occup_recode = recode(qg307egp, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, "7"= 5,
+                                      "8"= 4, "9"=3, "10"=2, "11"=1, .default = -8)) %>%    # recode occupation 
+  dplyr::mutate(edu_recode = cut(cfps2010eduy_best, 
+                                breaks = c(-0.5, 7.5, 9.5,11.5,12.5,14.5,16.5,22.5), 
+                                labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%        # recode education
+  dplyr::mutate(occup_recode = as.numeric(as.character(occup_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::na_if(., -8) %>%  # set NA
+  dplyr::mutate(SES_johnson_cfps = 7*occup_recode +4*edu_recode)
+summary(johnson_CFPS$SES_johnson_cfps)
+
+#################Johnson, 2013b (only CFPS) #######################
+# Subject: elderly
+# SES: same as Johnson, 2013
+johnson2_CFPS <- df.CFPS_elderly %>%
+  dplyr::mutate(occup_recode = recode(qg307egp, "1"= 9, "2"=8, "3"=7,   "4"=6, "5"= 5, "7"= 5,
+                                      "8"= 4, "9"=3, "10"=2, "11"=1, .default = -8)) %>%    # recode occupation 
+  dplyr::mutate(edu_recode = cut(cfps2010eduy_best, 
+                                 breaks = c(-0.5, 7.5, 9.5,11.5,12.5,14.5,16.5,22.5), 
+                                 labels = c("1", "2", "3", "4", "5", "6", "7"))) %>%        # recode education
+  dplyr::mutate(occup_recode = as.numeric(as.character(occup_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::na_if(., -8) %>%  # set NA
+  dplyr::mutate(SES_johnson2_cfps = 7*occup_recode +4*edu_recode)
+summary(johnson2_CFPS$SES_johnson2_cfps)
+
+###############Waldstein, 2017################
+# Subject: middle aged
+# SES: dichotomous low SES:  below median education (<12 years) and/or income below 125% of the federal poverty line 
+## CFPS ##
+waldstein_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(edu_recode = ifelse(cfps2010eduy_best < 12, 0, 1)) %>% # Low SES (education) = 0, high SES (education) = 1
+  dplyr::mutate(income_recode = ifelse(income < 1.25*1274, 0, 1)) %>%
+  dplyr::mutate(income_recode = as.numeric(as.character(income_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(SES_low = income_recode + edu_recode) %>%
+  dplyr::mutate(SES_waldstein_cfps = ifelse(SES_low == 0, 0, 1))
+table(waldstein_CFPS$SES_waldstein_cfps)
+## PSID ##
+waldstein_PSID <- df.PSID_adult %>%
+  dplyr::mutate(edu_recode = ifelse(edu < 12, 0, 1)) %>% # Low SES (education) = 0, high SES (education) = 1
+  dplyr::mutate(income_recode = ifelse(income < 1.25*12060, 0, 1)) %>%
+  dplyr::mutate(income_recode = as.numeric(as.character(income_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(SES_low = income_recode + edu_recode) %>%
+  dplyr::mutate(SES_waldstein_psid = ifelse(SES_low == 0, 0, 1))
+table(waldstein_PSID$SES_waldstein_psid)
+
+##############Shaked, 2018####################
+# Subjects: middle aged
+# SES: dichotomous low SES:  below median education and/or income below 125% of the federal poverty line 
+## CFPS ##
+shake_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(edu_recode = ifelse(cfps2010eduy_best < median(cfps2010eduy_best), 0, 1)) %>% # Low SES (education) = 0, high SES (education) = 1
+  dplyr::mutate(income_recode = ifelse(income < 1.25*1274, 0, 1)) %>%
+  dplyr::mutate(income_recode = as.numeric(as.character(income_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(SES_low = income_recode + edu_recode) %>%
+  dplyr::mutate(SES_shake_cfps = ifelse(SES_low == 0, 0, 1))
+table(shake_CFPS$SES_shake_cfps)
+## PSID ##
+shake_PSID <- df.PSID_adult %>%
+  dplyr::mutate(edu_recode = ifelse(edu < median(edu), 0, 1)) %>% # Low SES (education) = 0, high SES (education) = 1
+  dplyr::mutate(income_recode = ifelse(income < 1.25*12060, 0, 1)) %>%
+  dplyr::mutate(income_recode = as.numeric(as.character(income_recode)),
+                edu_recode = as.numeric(as.character(edu_recode))) %>%
+  dplyr::mutate(SES_low = income_recode + edu_recode) %>%
+  dplyr::mutate(SES_shake_psid = ifelse(SES_low == 0, 0, 1))
+table(shake_PSID$SES_shake_psid)
+
+###########Noble, 2012b############
+# Subject: young to old adults (above 17; here use age>22 in accordance with other studies)
+# SES: education
+#     1. dichotomous <14/>=14yrs
+#     2. categorical: high school or less (11); Some college; colege and up (16)
+## CFPS ##
+noble3_CFPS <- df.CFPS %>%
+  dplyr::filter(age > 22) %>% # extract adults and elderly
+  dplyr::mutate(SES_noble3_edu1_cfps = ifelse(cfps2010eduy_best <14, 0, 1),
+                SES_noble3_edu2_cfps = cut(cfps2010eduy_best,
+                                           breaks = c(-0.01, 11.5, 15.5, 22.5),
+                                           labels = c("high school", "some college", "colege")))
+table(noble3_CFPS$SES_noble3_edu1_cfps)
+table(noble3_CFPS$SES_noble3_edu2_cfps)
+## PSID ##
+noble3_PSID <- df.PSID %>%
+  dplyr::filter(age > 22) %>% # extract adults and elderly
+  dplyr::mutate(SES_noble3_edu1_psid = ifelse(edu <14, 0, 1),
+                SES_noble3_edu2_psid = cut(edu,
+                                           breaks = c(-0.01, 11.5, 15.5, 17.5, 99),
+                                           labels = c("high school", "some college", "colege", NA)))
+table(noble3_PSID$SES_noble3_edu1_psid)
+table(noble3_PSID$SES_noble3_edu2_psid)
+
+############Cavanagh, 2013#################
+# Subject: middle-aged
+# SES: contains early life SES and current SES (only current SES can be calculated)
+#     --> Current SES: deprivations (summed score of dichotomous score), including income (<25,000), social class (original cut point: 2/3), house owner (both CFPS and PSID only have data about whether the house belong to the family, not the individual)
+#        SES: sum of the three deprivation (least deprivation = 0, most deprivation = 3)
+# social class cut point: subjective social class in both CFPS and PSID was in 1-5. Use 3
+## CFPS ##
+cavanagh_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(income_dich = ifelse(income < 25000*0.936*3.329, 0, 1), # convert income into dichotomous variable (cut point $25,000 in 2013): CPI US dollar 2010/2013 = 218.056/232.957 = 0.936;PPP: CNY/US dollar in 2010 = 3.329
+                social_dich = ifelse(qm402 <= 3, 0, 1), # convert social class into dichotomous variable
+                house_dich = ifelse(fd1 <=2 | fd1 == 6, 1, 
+                                ifelse(fd1 == 77, NA, 0))) %>% # convert housing into dichotomous variable: ownership of the house: in CFPS in 7 categories: 1 = "Property right solely owned by the family" 2 = "Joint property right with work unit(danwei)" 3 = "Rented"  4 = "Provided by the government for free" 5 = "Provided by work unit(danwei) for free"6 = "Provided by parents/children" 7 = "Borrowed from friends or relatives" 77 = "Other [Please specify]” —>  count 1,2,6 as owned by family and set 77 as NA
+  dplyr::mutate(SES_cavanagh_cfps = income_dich + social_dich + house_dich)
+table(cavanagh_CFPS$SES_cavanagh_cfps)
+
+## PSID ## 
+cavanagh_PSID <- df.PSID_adult %>%
+  dplyr::mutate(income_dich = ifelse(income < 25000*1.05, 0, 1)) %>% # convert income: CPI US 2017/2013 = 245.120/232.957
+  dplyr::mutate(sss_rp = ifelse(relation ==10 , sss_rp, NA), # set sss_rp only for reference person
+                sss_sp = ifelse(relation ==20 | relation == 22, sss_sp, NA)) %>% # set sss_sp only for spouse/paterner
+  dplyr::mutate(sss = ifelse(!is.na(sss_rp), sss_rp, sss_sp)) %>% # combine sss_sp and sss_rp into sss
+  dplyr::mutate(social_dich = ifelse(sss <= 3, 0, 1)) %>% # convert social class
+  dplyr::mutate(house_dich = ifelse(ER66031 ==0, 0, 1)) %>% # convert housing: ER66031 = 0, rent or neither rent or own; ER66031 = 1-9999997, actual value of the owned house; 9999998, DK; 9999999, refuse to answer (but still the owner of the house)
+  dplyr::mutate(SES_cavanagh_psid = income_dich + social_dich + house_dich)
+table(cavanagh_PSID$SES_cavanagh_psid)  
+
+###################Holz, 2015####################
+# Subjects: young adults
+# SES: early life poverty using income (60% of the median of the adjusted family income)
+#      CFPS: median income in China in 2010: CNY 16839 per capita (source: http://www.gov.cn/gzdt/2012-01/20/content_2050056.htm)
+#      PSID: median family income in US in 2017: $61,372 (source: https://www.census.gov/library/publications/2018/demo/p60-263.html)
+## CFPS ##
+holz_CFPS <- df.CFPS_child %>%
+  dplyr::mutate(SES_holz_cfps = ifelse(faminc/familysize <= 0.6*16839, 1, 0)) # 0 = not exposed, 1= exposed
+table(holz_CFPS$SES_holz_cfps)
+
+## PSID ##
+holz_PSID <- df.PSID_child %>%
+  dplyr::mutate(SES_holz_psid = ifelse(fincome <= 0.6*61372, 1, 0))
+table(holz_PSID$SES_holz_psid)
+
+#################Piras, 2011############
+# Subjects: middle-aged
+# SES: Education (in years)
+## CFPS ##
+piras_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(SES_piras_cfps = cut(cfps2010edu_best, 
+                                     breaks = c(-0.01, 2.5, 3.5, 4.5, 6.5, 8.5),
+                                     labels = c("6", "9", "12", "16", "18"))) %>%
+  dplyr::mutate(SES_piras_cfps = as.numeric(as.character(SES_piras_cfps)))
+summary(piras_CFPS$SES_piras_cfps)
+
+## PSID ##
+piras_PSID <- df.PSID_adult %>%
+  dplyr::mutate(SES_piras_psid = cut(edu, 
+                                     breaks = c(-0.01, 6.5, 8.5, 12.5, 16.5, 18.5, 99),
+                                     labels = c("6", "8", "12", "16", "18", NA))) %>%
+  dplyr::mutate(SES_piras_psid = as.numeric(as.character(SES_piras_psid)))
+summary(piras_PSID$SES_piras_psid)
+
+#############Zhu, 2018################
+# Subjects: young adults
+# SES: own education, household income & employment status
+#      education: <11 = 11; 12; 13; 14; 15; 16; 17+ = 17
+#      income: 1 = <10 000USD; 2 = 10 000 ~ 19 999; 3 = 20 000 ~ 29 999; 4 = 30 000 ~ 39 999; 5 = 40 000 49 999; 6 = 50 000 ~ 74 999; 7 = 75 000 ~ 99 999; 8 = >=100 000 USD
+#      employment: not working = 0; part-time = 1; full time =2 (CFPS only distinguish employment/unemployment)
+## CFPS ##
+zhu_CFPS <- df.CFPS_adult %>%
+  dplyr::mutate(fincome_recode = cut(faminc,
+                                     breaks = c(-0.01, 10000*0.868*3.329, 19999*0.868*3.329, 29999*0.868*3.329, 39999*0.868*3.329, 49999*0.868*3.329, 74999*0.868*3.329, 99999*0.868*3.329, 10000000),
+                                     labels = c("1", "2", "3", "4", "5", "6", "7", "8"))) %>% # CPI US dollar 2010/2018 = 218.056/251.107 = 0.868; PPP: CNY/US dollar in 2010 = 3.329
+  dplyr::mutate(edu_recode = cut(cfps2010eduy_best,
+                                 breaks = c(-0.01, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 22.5),
+                                 labels = c("11", "12", "13", "14", "15", "16", "17"))) %>%
+  dplyr::mutate(employment_recode = ifelse(qg3 == 1, 2, 0)) %>%
+  dplyr::mutate(SES_zhu_income_cfps = as.numeric(as.character(fincome_recode)),
+                SES_zhu_edu_cfps = as.numeric(as.character(edu_recode)),
+                SES_zhu_employment_cfps = employment_recode)
+table(zhu_CFPS$SES_zhu_income_cfps)
+table(zhu_CFPS$SES_zhu_edu_cfps)
+table(zhu_CFPS$SES_zhu_employment_cfps)
+
+## PSID ##
+zhu_PSID <- df.PSID_adult %>%
+  dplyr::mutate(fincome_recode = cut(fincome,
+                                     breaks = c(-0.01, 10000*0.976, 19999*0.976, 29999*0.976, 39999*0.976, 49999*0.976, 74999*0.976, 99999*0.976, 100000000000),
+                                     labels = c("1", "2", "3", "4", "5", "6", "7", "8"))) %>% # CPI US dollar 2017/2018 = 245.120/251.107 = 0.976 
+  dplyr::mutate(edu_recode = cut(edu,
+                                 breaks = c(-0.01, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 22.5),
+                                 labels = c("11", "12", "13", "14", "15", "16", "17"))) %>%
+  dplyr::mutate(employment_recode = ifelse(ER34516 == 1, 2, 
+                                           ifelse(ER34516 == 2, 1,
+                                                  ifelse(ER34516==9 | ER34516 == 0, NA, 0)))) %>% # 1= working; 2= Only temporarily laid off; 3-8 = not employed; 9 = DK/NA; 0 = not applicable 
+  dplyr::mutate(SES_zhu_income_psid = as.numeric(as.character(fincome_recode)),
+                SES_zhu_edu_psid = as.numeric(as.character(edu_recode)),
+                SES_zhu_employment_psid = employment_recode)
+table(zhu_PSID$SES_zhu_income_psid)
+table(zhu_PSID$SES_zhu_edu_psid)
+table(zhu_PSID$SES_zhu_employment_psid)
 
 # ---------------------------------------------------------------------------------------
 # ---------- 4.  extract columns of pid and SES from all the dataframes of SES ----------
