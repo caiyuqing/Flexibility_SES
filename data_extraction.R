@@ -270,4 +270,3 @@ df.children <- dfc0 %>%
 # save data as RData for futher analysis
 save(df.children, df.individual, df.community, df.family,
      file = 'CFPS2010.RData')
-

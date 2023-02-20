@@ -9,4 +9,5 @@ data/
 .ipynb_checkpoints
 .RData
 .DS_Store
+*~$*
 .dta
