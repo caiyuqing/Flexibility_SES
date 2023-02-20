@@ -10,3 +10,4 @@ data/
 .RData
 .DS_Store
 *~$*
+.dta

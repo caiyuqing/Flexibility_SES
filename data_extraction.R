@@ -141,6 +141,8 @@ df.individual <- dfa0 %>%
                 qk6_min,	# Income interval (lower limit) last year
                 qk601,	  # Total income last year
                  ### occupation
+                qg3, # employed or not
+                qg7, # part-time
                 qg307code,	# Occupation classification (CSCO system)
                 qg307isco,	# Occupation classification (ISCO-88)
                 qg307egp,	  # Occupation classification (EGP)
