@@ -1,7 +1,10 @@
-# Assessment flexibility in the measurement of SES
+# Assessment flexibility in the measurement of SES: A preregistered meta-resarch
 
 ## Overview
-This project aims at assessing the flexibility in measuring SES in cognitive neuroscience. See our [PPT for NeuroMatch 2.0](https://osf.io/gcxs6/) for more details about this project.
+This project aims at assessing the flexibility in measuring SES in cognitive neuroscience. Currently, this study has been registered (see our preregistration [here](https://osf.io/hwtxq), see also our [PPT for NeuroMatch 2.0](https://osf.io/gcxs6/)).
+
+## Progress
+Since this project is massive for a small team, we are moving slowly. Now we have finished literature searching, article screening, and data extraction. We are reproducing SES scores for the SES indices we extracted from around 600 papers. Please be patient for our final results!
 
 ## Reproducing SES scores using open dataset
 We will use data from [China Family Panel Study, CFPS](https://opendata.pku.edu.cn/dataverse/CFPS?language=en) and [Panel Study of Income Dynamics (PSID) ](https://psidonline.isr.umich.edu/) to reproduce the SES scores using ways of calculating SES that we extracted from the literature. 
