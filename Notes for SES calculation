@@ -17,3 +17,7 @@ Note: in HUD, highest family income acquire public assistance is 50% of the medi
 family size adjust (HUB)
 1    2   3   4    5      6      7     8      
 70%	80%	90%	Base	108%	116%	124%	132%
+
+3. Education:
+Although categorical education and continuous education both exist for parents in CFPS, categorical education (edu_f, edu_m) in CFPS and continuous education (eduy_f, eduy_m) in PSID are much more complete. 
+Hence, without further indication of detailed calculation in the original paper, for CFPS, categorical education for parents (edu_f, edu_m) should be used, and for PSID, continuous education for parents (eduy_f, eduy_m)
