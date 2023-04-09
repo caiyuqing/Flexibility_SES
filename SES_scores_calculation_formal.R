@@ -524,13 +524,15 @@ table(betan_PSID$SES_betan_psid)
 #        CFPS: convert to equivalence in US 2010 using CPI and then convert to equivalence in China 2010 using PPP
 #             CPI US 2010/2008 = 218.056/215.303 = 1.013; PPP China CNY/US dollar (2010) = 3.329
 #        PSID: convert to equivalence in US 2010
+convert_index_cfps_function(paper_year = 2008, paper_country = "USA")  
+convert_idx = index_ppp_first_cfps #index_cpi_first_cfps
 ## CFPS ##
 moog_CFPS <- df.CFPS_child %>%
   dplyr::mutate(edu_cat = dplyr::recode_factor(edu_m, "1" = 1,"2" = 1,"3" = 1,
                                                "4" = 2,"5" = 3,"6" = 4,"7" = 5,"8" = 5))  %>% # recode education
   dplyr::mutate(income_cat = base::cut(faminc, #recode income, 
-                                       breaks= c(-0.01, 15000*1.013*3.329, 45000*1.013*3.329, 
-                                                 75000*1.013*3.329, 100000*1.013*3.329, 300000), 
+                                       breaks= c(-0.01, 15000*convert_idx, 45000*convert_idx, 
+                                                 75000*convert_idx, 100000*convert_idx, 300000), 
                                        labels = c("1", "2", "3", "4", "5"))) %>% 
   dplyr::mutate(income_cat = as.numeric(as.character(income_cat)),# convert income and education into numeric variables
                 edu_cat = as.numeric(as.character(edu_cat)))%>% 
@@ -540,9 +542,11 @@ moog_CFPS <- df.CFPS_child %>%
 table(moog_CFPS$SES_moog_cfps)
 
 ##PSID##
+convert_index_psid_function(paper_year = 2008, paper_country = "USA")  
+convert_idx = index_ppp_first_psid #index_cpi_first_psid
 moog_PSID <- df.PSID_child %>%
   dplyr::mutate(income_cat=cut(fincome, 
-                               breaks= c(-0.01, 15000*1.139, 45000*1.139, 75000*1.139, 100000*1.139, 300000), 
+                               breaks= c(-0.01, 15000*convert_idx, 45000*convert_idx, 75000*convert_idx, 100000*convert_idx, 300000), 
                                labels = c("1", "2","3", "4","5"))) %>% #recode income:CPI US 2017/2008 = 245.120/215.303 = 1.139;
   dplyr::mutate(edu_m_recode = cut(eduy_m, 
                                    breaks = c(-0.00001, 8.5, 12.5, 14.5, 16.5, 17.5, 100), 
