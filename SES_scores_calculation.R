@@ -197,7 +197,6 @@ df.map_psid <- foreign::read.spss("GID_map_psid.sav", to.data.frame = TRUE) %>% 
   dplyr::select(pid, pid_f, pid_m)
 tmp<-as.data.frame(colnames(df.PSID))
 write.csv(tmp, file = "colnames.csv")
-df.PSID$ER7142
 # load the PSID data
 df.PSID <- foreign::read.spss("PSID_selected_data.sav", to.data.frame = TRUE) %>% # select data from PSID website
   dplyr::mutate(pid = (ER30001 * 1000) + ER30002) %>% # generate a new column for unique pid for each individual.
@@ -257,7 +256,7 @@ save(df.PSID_child, file = "df.PSID_child.RData")
 
 # select adults (23-60) data for further analysis
 df.PSID_adult <- df.PSID %>%
-  dplyr::filter(age >22 & age <= 60)
+  dplyr::filter(age >22 & age <= 60) 
 
 # check data
 summary(df.PSID_adult)
@@ -979,9 +978,9 @@ kong_PSID <- df.PSID_child %>%
                                    labels = c("0", "6","8", "12", "16", "18", NA))) %>%
   dplyr::mutate(edu_f_recode = as.numeric(as.character(edu_f_recode)),
                 edu_m_recode = as.numeric(as.character(edu_m_recode))) %>%
-  dplyr::mutate(sss_rp = na_if(sss_rp, 9),
-                sss_sp = na_if(sss_sp, 9)) %>% # set NA for sss (sss = 9 means NA, don't know, refuse to answer)
-  dplyr::mutate(sss_family = (sss_rp + sss_sp)/2) %>%
+  dplyr::mutate(sss_f = na_if(sss_f, 9),
+                sss_m = na_if(sss_m, 9)) %>% # set NA for sss (sss = 9 means NA, don't know, refuse to answer)
+  dplyr::mutate(sss_family = (sss_f + sss_m)/2) %>%
   dplyr::rename(SES_kong_psid_fedu = edu_f_recode,
                 SES_kong_psid_medu = edu_m_recode, 
                 SES_kong_psid_sss = sss_family)
@@ -1073,9 +1072,9 @@ yu_cfps <- yu_cfps %>%
   dplyr::mutate(SES_yu_cfps = 0.71118313*ITN + 0.78339583*edu_f_recode + 0.81539907*edu_m_recode + (-0.04682041)*sss)
 
 ## PSID ##
-## cannot calculate because there is no "children" who is also reference person or spouse (only rp and sp have SSS score)
+## only for children who are also rp/sp in relation? --> need to check
 yu_PSID <- df.PSID_child%>%
-  dplyr::filter(relation == 10 & relation ==20) ###
+  dplyr::filter(relation == 10 | relation ==20) ###
 
 ############### Yang, 2016 ##############
 # Subject: young adults
