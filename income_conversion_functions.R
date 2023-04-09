@@ -8,8 +8,9 @@ pacman::p_load('tidyverse')
 # library(stringr) # part of tidyverse
 
 # read CPI and PPP data
-CPI <- read.csv("CPI.csv",header = TRUE)
-PPP <- read.csv("PPP.csv",header = TRUE) %>% dplyr::rename(`Country.Code`=1) # rename the first column, avoid encoding issues
+CPI <- utils::read.csv("CPI.csv",header = TRUE)
+PPP <- utils::read.csv("PPP.csv",header = TRUE) %>% dplyr::rename(`Country.Code`=1) # rename the first column, avoid encoding issues
+#GDPdeflator <- utils::read.csv("GDPdeflator.csv",header = TRUE)# %>% dplyr::rename(`Country.Code`=1) # rename the first column, avoid encoding issues
 
 # check if country code are same (indeed the same)
 country_code_CPI = CPI$Country.Code
@@ -28,6 +29,11 @@ CPI <- gather(CPI, TIME, Value, X1960:X2021, factor_key=TRUE) %>%
   dplyr::mutate(across('TIME', str_replace, 'X', '')) %>%
   dplyr::mutate(TIME = as.numeric(TIME))
 
+# restructure GDPdeflator
+#GDPdeflator <-GDPdeflator[,c(2,5:66)]
+#GDPdeflator <- gather(GDPdeflator, TIME, Value, X1960:X2021, factor_key=TRUE) %>%
+#  dplyr::mutate(across('TIME', str_replace, 'X', '')) %>%
+#  dplyr::mutate(TIME = as.numeric(TIME))
 ############# conversion functions #############
 ## CFPS ## 
 convert_index_cfps_function <- function(paper_year, paper_country){
