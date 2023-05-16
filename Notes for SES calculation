@@ -21,3 +21,6 @@ family size adjust (HUB)
 3. Education:
 Although categorical education and continuous education both exist for parents in CFPS, categorical education (edu_f, edu_m) in CFPS and continuous education (eduy_f, eduy_m) in PSID are much more complete. 
 Hence, without further indication of detailed calculation in the original paper, for CFPS, categorical education for parents (edu_f, edu_m) should be used, and for PSID, continuous education for parents (eduy_f, eduy_m)
+
+4. need to check:
+edu_parents when there is a comparison between father and mother, how NA was handled
